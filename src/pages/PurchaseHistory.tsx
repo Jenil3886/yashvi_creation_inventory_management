@@ -519,7 +519,7 @@ export const PurchaseHistory: React.FC = () => {
             </div>
 
             {/* Totals */}
-            <div className="flex justify-between items-center text-xs p-3.5 bg-brand-50 dark:bg-brand-950/20 border border-brand-200/20 rounded-xl">
+            <div className="flex justify-between items-center text-xs p-3.5 bg-brand-50 dark:bg-brand-900/20 border border-brand-200/20 rounded-xl">
               <div>
                 <span className="text-[8px] font-black text-slate-400 uppercase tracking-wider block">
                   Total Items
@@ -547,7 +547,7 @@ export const PurchaseHistory: React.FC = () => {
                 type="button"
                 onClick={() => handleUndoInvoice(selectedInvoice.id)}
                 disabled={undoing}
-                className="w-full flex items-center justify-center gap-2 py-3 bg-red-100 hover:bg-red-200 text-red-600 font-bold rounded-xl text-xs transition-colors active:scale-95"
+                className="w-full flex items-center justify-center gap-2 py-3 bg-red-100 hover:bg-red-200 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-600 dark:text-rose-400 font-bold rounded-xl text-xs transition-colors active:scale-95"
               >
                 <Trash2 size={16} />
                 <span>
