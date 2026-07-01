@@ -46,5 +46,6 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true, // Listen on all local interfaces so Android phones can test local Vite instance on WiFi
+    allowedHosts: true, // Allow accessing the dev server from any proxy or tunnel domain
   },
 });
