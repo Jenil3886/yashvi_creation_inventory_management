@@ -24,19 +24,34 @@ interface OfflinePurchase {
   createdAt: string;
 }
 
+export interface OfflineExpense {
+  id: string;
+  title: string;
+  amount: number;
+  category: string;
+  expenseDate: string;
+  remarks?: string;
+  createdAt: string;
+}
+
 interface OfflineState {
   isOnline: boolean;
   offlineQueue: OfflinePurchase[];
+  offlineExpenses: OfflineExpense[];
   isSyncing: boolean;
   setOnlineStatus: (status: boolean) => void;
   loadQueue: () => Promise<void>;
+  loadExpensesQueue: () => Promise<void>;
   enqueuePurchase: (purchase: OfflinePurchase) => Promise<void>;
+  enqueueExpense: (expense: OfflineExpense) => Promise<void>;
   syncQueue: () => Promise<void>;
+  syncExpenses: () => Promise<void>;
 }
 
 export const useOfflineStore = create<OfflineState>((set, get) => ({
   isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
   offlineQueue: [],
+  offlineExpenses: [],
   isSyncing: false,
 
   setOnlineStatus: (status: boolean) => {
@@ -45,12 +60,18 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
     // Trigger sync automatically when transitioning back online
     if (status && wasOffline) {
       get().syncQueue();
+      get().syncExpenses();
     }
   },
 
   loadQueue: async () => {
     const queue = await IDBHelper.getAll<OfflinePurchase>('offline_purchases');
     set({ offlineQueue: queue });
+  },
+
+  loadExpensesQueue: async () => {
+    const queue = await IDBHelper.getAll<OfflineExpense>('offline_expenses');
+    set({ offlineExpenses: queue });
   },
 
   enqueuePurchase: async (purchase: OfflinePurchase) => {
@@ -72,6 +93,21 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
 
     // 4. Refresh local store queue list
     await get().loadQueue();
+  },
+
+  enqueueExpense: async (expense: OfflineExpense) => {
+    // 1. Save in IndexedDB offline_expenses queue
+    await IDBHelper.put('offline_expenses', expense);
+
+    // 2. Put in expenses cache so the UI shows it immediately
+    await IDBHelper.put('expenses', expense);
+
+    // 3. Mark backend settings as backupPending
+    const backupSettings = { key: 'backupPending', value: 'true' };
+    await IDBHelper.put('settings', backupSettings);
+
+    // 4. Refresh local store queue list
+    await get().loadExpensesQueue();
   },
 
   syncQueue: async () => {
@@ -117,6 +153,39 @@ export const useOfflineStore = create<OfflineState>((set, get) => ({
 
     // Reload queue and clear syncing state
     await get().loadQueue();
+    set({ isSyncing: false });
+  },
+
+  syncExpenses: async () => {
+    const { isOnline, isSyncing, offlineExpenses } = get();
+    if (!isOnline || isSyncing || offlineExpenses.length === 0) return;
+
+    set({ isSyncing: true });
+    const queueCopy = [...offlineExpenses];
+
+    for (const exp of queueCopy) {
+      try {
+        const apiPayload = {
+          title: exp.title,
+          amount: exp.amount,
+          category: exp.category,
+          expenseDate: exp.expenseDate,
+          remarks: exp.remarks,
+        };
+
+        // Post expense to backend
+        await apiClient.post('/expenses', apiPayload);
+
+        // Delete from IndexedDB queue upon successful upload
+        await IDBHelper.delete('offline_expenses', exp.id);
+      } catch (error: any) {
+        console.warn('Sync failed on expense, postponing remaining queue:', error);
+        break;
+      }
+    }
+
+    // Reload queue and clear syncing state
+    await get().loadExpensesQueue();
     set({ isSyncing: false });
   },
 }));

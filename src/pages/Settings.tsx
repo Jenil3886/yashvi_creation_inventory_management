@@ -11,7 +11,9 @@ import {
   FileCheck,
   Clock,
   LogOut,
+  Landmark,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import useOfflineStore from "../store/useOfflineStore";
 import useAuthStore from "../store/useAuthStore";
 import apiClient from "../services/apiClient";
@@ -350,6 +352,32 @@ export const Settings: React.FC = () => {
             </button>
           </div>
         )}
+      </div>
+ 
+      {/* FINANCIALS & EXPENSES */}
+      <div className="p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.01)] space-y-3">
+        <h2 className="text-xs font-black uppercase text-slate-400 tracking-wider">
+          Financial Management
+        </h2>
+        <div className="flex items-center justify-between p-2.5 bg-slate-50 dark:bg-darkBg rounded-xl border border-slate-100 dark:border-darkBorder">
+          <div className="flex items-center gap-2">
+            <Landmark size={15} className="text-slate-400" />
+            <div>
+              <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                Business Expenses
+              </p>
+              <p className="text-[9px] text-slate-400 font-medium">
+                Log CA payments, packing materials, and utility costs.
+              </p>
+            </div>
+          </div>
+          <Link
+            to="/expenses"
+            className="px-3 py-2 bg-brand-50 hover:bg-brand-100 text-brand-500 dark:text-brand-400 dark:bg-brand-950/20 text-[10px] font-extrabold rounded-lg border border-brand-200/10 active:scale-95 transition-all text-center"
+          >
+            Manage Expenses
+          </Link>
+        </div>
       </div>
 
       {/* CATEGORY MASTER CRUD */}

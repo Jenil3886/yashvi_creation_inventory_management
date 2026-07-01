@@ -9,6 +9,7 @@ import PurchaseHistory from './pages/PurchaseHistory';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
+import Expenses from './pages/Expenses';
 
 // Instantiate react query client
 const queryClient = new QueryClient({
@@ -33,6 +34,7 @@ export const App: React.FC = () => {
             <Route path="/reports" element={<Reports />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/expenses" element={<Expenses />} />
           </Route>
         </Routes>
       </Router>

@@ -9,14 +9,17 @@ import {
   Package,
   History,
   Barcode,
+  Landmark,
 } from "lucide-react";
 import useOfflineStore from "../store/useOfflineStore";
+import type { OfflineExpense } from "../store/useOfflineStore";
 import apiClient from "../services/apiClient";
 import { IDBHelper } from "../utils/idbHelper";
 
 interface SummaryData {
   todayPurchase: number;
   currentMonthPurchase: number;
+  currentMonthExpense: number;
   inventoryValue: number;
   lowStockCount: number;
   recentPurchases: any[];
@@ -30,6 +33,7 @@ export const Dashboard: React.FC = () => {
   const [data, setData] = useState<SummaryData>({
     todayPurchase: 0,
     currentMonthPurchase: 0,
+    currentMonthExpense: 0,
     inventoryValue: 0,
     lowStockCount: 0,
     recentPurchases: [],
@@ -116,6 +120,7 @@ export const Dashboard: React.FC = () => {
       let cachedDashboard: SummaryData = {
         todayPurchase: 0,
         currentMonthPurchase: 0,
+        currentMonthExpense: 0,
         inventoryValue: 0,
         lowStockCount: 0,
         recentPurchases: [],
@@ -167,11 +172,28 @@ export const Dashboard: React.FC = () => {
         0,
       );
 
+      // 5. Month Expenses (offline + cached)
+      const cachedExpenses = await IDBHelper.getAll<OfflineExpense>("expenses");
+      const queuedExpenses = await IDBHelper.getAll<OfflineExpense>("offline_expenses");
+      const allExpenses = cachedExpenses.concat(queuedExpenses);
+      const monthOfflineExpenseAmt = allExpenses.reduce(
+        (sum: number, exp: any) => {
+          const expDate = new Date(exp.expenseDate);
+          return expDate.getMonth() === currentMonth &&
+            expDate.getFullYear() === currentYear
+            ? sum + Number(exp.amount)
+            : sum;
+        },
+        0,
+      );
+ 
       // Merge results
       setData({
         todayPurchase: cachedDashboard.todayPurchase + todayOfflineAmt,
         currentMonthPurchase:
           cachedDashboard.currentMonthPurchase + monthOfflineAmt,
+        currentMonthExpense:
+          (cachedDashboard.currentMonthExpense || 0) + monthOfflineExpenseAmt,
         inventoryValue:
           computedInventoryValue || cachedDashboard.inventoryValue,
         lowStockCount: computedLowStockProducts.length,
@@ -192,21 +214,28 @@ export const Dashboard: React.FC = () => {
   const stats = [
     {
       title: "Today's Purchases",
-      value: `₹${data.todayPurchase.toLocaleString("en-IN")}`,
+      value: `₹${(data.todayPurchase ?? 0).toLocaleString("en-IN")}`,
       icon: TrendingUp,
       color: "bg-brand-500 text-white",
       textColor: "text-brand-600 dark:text-brand-400",
     },
     {
-      title: "Current Month",
-      value: `₹${data.currentMonthPurchase.toLocaleString("en-IN")}`,
+      title: "Current Month Purchases",
+      value: `₹${(data.currentMonthPurchase ?? 0).toLocaleString("en-IN")}`,
       icon: FileSpreadsheet,
       color: "bg-indigo-500 text-white",
       textColor: "text-indigo-600 dark:text-indigo-400",
     },
     {
+      title: "Current Month Expenses",
+      value: `₹${(data.currentMonthExpense ?? 0).toLocaleString("en-IN")}`,
+      icon: Landmark,
+      color: "bg-rose-500 text-white",
+      textColor: "text-rose-600 dark:text-rose-400",
+    },
+    {
       title: "Inventory Valuation",
-      value: `₹${data.inventoryValue.toLocaleString("en-IN")}`,
+      value: `₹${(data.inventoryValue ?? 0).toLocaleString("en-IN")}`,
       icon: Boxes,
       color: "bg-emerald-500 text-white",
       textColor: "text-emerald-600 dark:text-emerald-400",
@@ -258,13 +287,13 @@ export const Dashboard: React.FC = () => {
         <h2 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest px-1">
           Quick Actions
         </h2>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <button
             onClick={() => navigate("/purchase-entry")}
             className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
           >
             <PlusCircle size={22} className="text-brand-500 mb-2" />
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 text-center">
               New Purchase
             </span>
           </button>
@@ -273,8 +302,17 @@ export const Dashboard: React.FC = () => {
             className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
           >
             <Package size={22} className="text-emerald-500 mb-2" />
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 text-center">
               Add Product
+            </span>
+          </button>
+          <button
+            onClick={() => navigate("/expenses")}
+            className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
+          >
+            <Landmark size={22} className="text-amber-500 mb-2" />
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 text-center">
+              Log Expense
             </span>
           </button>
         </div>

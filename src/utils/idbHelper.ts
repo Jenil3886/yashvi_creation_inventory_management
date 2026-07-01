@@ -1,5 +1,5 @@
 const DB_NAME = 'YC_Inventory_PWA_DB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 export class IDBHelper {
   private static dbPromise: Promise<IDBDatabase> | null = null;
@@ -31,6 +31,14 @@ export class IDBHelper {
         // App Settings store
         if (!db.objectStoreNames.contains('settings')) {
           db.createObjectStore('settings', { keyPath: 'key' });
+        }
+        // Expenses cache store
+        if (!db.objectStoreNames.contains('expenses')) {
+          db.createObjectStore('expenses', { keyPath: 'id' });
+        }
+        // Offline expenses queue store
+        if (!db.objectStoreNames.contains('offline_expenses')) {
+          db.createObjectStore('offline_expenses', { keyPath: 'id' });
         }
       };
 
