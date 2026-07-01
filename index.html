@@ -1,6 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      // Prevent React Fast Refresh ReferenceErrors if scripts are loaded in a mixed dev/prod state
+      window.$RefreshReg$ = window.$RefreshReg$ || function() {};
+      window.$RefreshSig$ = window.$RefreshSig$ || function() { return function(type) { return type; }; };
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/pwa-192x192.png" />
     <meta
