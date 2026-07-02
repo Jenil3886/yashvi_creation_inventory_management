@@ -7,10 +7,7 @@ interface BarcodeScannerProps {
   onClose: () => void;
 }
 
-export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
-  onScanSuccess,
-  onClose,
-}) => {
+export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScanSuccess, onClose }) => {
   const scannerId = 'yc-reader-element';
   const qrScannerRef = useRef<Html5Qrcode | null>(null);
 
@@ -34,11 +31,14 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
           (decodedText) => {
             onScanSuccess(decodedText);
             // Auto close scanner on success
-            qrScanner.stop().then(() => onClose()).catch(console.error);
+            qrScanner
+              .stop()
+              .then(() => onClose())
+              .catch(console.error);
           },
           () => {
             // Ignore scan failure frame-by-frame logs
-          }
+          },
         );
       } catch (err) {
         console.error('Camera capture init error:', err);
@@ -92,7 +92,8 @@ export const BarcodeScanner: React.FC<BarcodeScannerProps> = ({
 
       {/* Instructions Footer */}
       <div className="p-6 bg-slate-900 text-center text-xs text-slate-400 border-t border-slate-800">
-        Position the product barcode within the box bounds. Ensure good lighting for quick detection.
+        Position the product barcode within the box bounds. Ensure good lighting for quick
+        detection.
       </div>
     </div>
   );

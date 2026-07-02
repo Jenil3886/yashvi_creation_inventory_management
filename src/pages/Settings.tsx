@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   CloudSync,
   Plus,
@@ -12,13 +12,13 @@ import {
   Clock,
   LogOut,
   Landmark,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import useOfflineStore from "../store/useOfflineStore";
-import useAuthStore from "../store/useAuthStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
-import Drawer from "../components/Drawer";
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import useOfflineStore from '../store/useOfflineStore';
+import useAuthStore from '../store/useAuthStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
+import Drawer from '../components/Drawer';
 
 interface Category {
   id: string;
@@ -40,7 +40,7 @@ export const Settings: React.FC = () => {
 
   // App Lock local setting
   const [appLockEnabled, setAppLockEnabled] = useState(
-    localStorage.getItem("yc_app_lock_enabled") === "true",
+    localStorage.getItem('yc_app_lock_enabled') === 'true',
   );
 
   // Data Lists
@@ -52,14 +52,14 @@ export const Settings: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Category inline form state
-  const [newCatName, setNewCatName] = useState("");
+  const [newCatName, setNewCatName] = useState('');
 
   // Supplier Form Drawer states
   const [isSupDrawerOpen, setIsSupDrawerOpen] = useState(false);
-  const [supName, setSupName] = useState("");
-  const [supPhone, setSupPhone] = useState("");
-  const [supAddress, setSupAddress] = useState("");
-  const [supGst, setSupGst] = useState("");
+  const [supName, setSupName] = useState('');
+  const [supPhone, setSupPhone] = useState('');
+  const [supAddress, setSupAddress] = useState('');
+  const [supGst, setSupGst] = useState('');
 
   // Pairing code drawer states
   const [isPairingDrawerOpen, setIsPairingDrawerOpen] = useState(false);
@@ -70,40 +70,40 @@ export const Settings: React.FC = () => {
     setLoading(true);
     try {
       // 1. Fetch categories
-      const cachedCats = await IDBHelper.getAll<Category>("categories");
+      const cachedCats = await IDBHelper.getAll<Category>('categories');
       setCategories(cachedCats);
 
       // 2. Fetch suppliers
-      const cachedSups = await IDBHelper.getAll<Supplier>("suppliers");
+      const cachedSups = await IDBHelper.getAll<Supplier>('suppliers');
       setSuppliers(cachedSups);
 
       // 3. Load cloud settings (backup info)
       if (isOnline) {
-        const settingsRes = await apiClient.get("/settings");
+        const settingsRes = await apiClient.get('/settings');
         const settings = settingsRes.data.data;
 
         setBackupPending(settings.backupPending);
         setLastBackup(settings.lastBackupAt);
 
         // Update local settings DB
-        await IDBHelper.put("settings", {
-          key: "backupPending",
+        await IDBHelper.put('settings', {
+          key: 'backupPending',
           value: String(settings.backupPending),
         });
         if (settings.lastBackupAt) {
-          await IDBHelper.put("settings", {
-            key: "lastBackupAt",
+          await IDBHelper.put('settings', {
+            key: 'lastBackupAt',
             value: settings.lastBackupAt,
           });
         }
       } else {
-        const bp = await IDBHelper.get("settings", "backupPending");
-        const lb = await IDBHelper.get("settings", "lastBackupAt");
-        setBackupPending(bp?.value === "true");
+        const bp = await IDBHelper.get('settings', 'backupPending');
+        const lb = await IDBHelper.get('settings', 'lastBackupAt');
+        setBackupPending(bp?.value === 'true');
         setLastBackup(lb?.value || null);
       }
     } catch (e) {
-      console.error("Settings loading warning:", e);
+      console.error('Settings loading warning:', e);
     } finally {
       setLoading(false);
     }
@@ -117,12 +117,10 @@ export const Settings: React.FC = () => {
   const handleToggleAppLock = () => {
     const nextVal = !appLockEnabled;
     setAppLockEnabled(nextVal);
-    localStorage.setItem("yc_app_lock_enabled", String(nextVal));
+    localStorage.setItem('yc_app_lock_enabled', String(nextVal));
 
     if (isOnline) {
-      apiClient
-        .post("/settings", { appLockEnabled: nextVal })
-        .catch(console.error);
+      apiClient.post('/settings', { appLockEnabled: nextVal }).catch(console.error);
     }
   };
 
@@ -131,24 +129,24 @@ export const Settings: React.FC = () => {
     if (!isOnline) return;
     setLoading(true);
     try {
-      const res = await apiClient.post("/settings/backup-sync");
-      if (res.data.status === "success") {
+      const res = await apiClient.post('/settings/backup-sync');
+      if (res.data.status === 'success') {
         setBackupPending(false);
         setLastBackup(res.data.data.lastBackupAt);
 
         // Update cache
-        await IDBHelper.put("settings", {
-          key: "backupPending",
-          value: "false",
+        await IDBHelper.put('settings', {
+          key: 'backupPending',
+          value: 'false',
         });
-        await IDBHelper.put("settings", {
-          key: "lastBackupAt",
+        await IDBHelper.put('settings', {
+          key: 'lastBackupAt',
           value: res.data.data.lastBackupAt,
         });
       }
     } catch (e) {
       console.error(e);
-      alert("Backup sync failed.");
+      alert('Backup sync failed.');
     } finally {
       setLoading(false);
     }
@@ -158,24 +156,24 @@ export const Settings: React.FC = () => {
   const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOnline) {
-      alert("Online connectivity is required to modify master directories.");
+      alert('Online connectivity is required to modify master directories.');
       return;
     }
     if (!newCatName.trim()) return;
 
     try {
-      const res = await apiClient.post("/categories", {
+      const res = await apiClient.post('/categories', {
         name: newCatName.trim(),
       });
-      if (res.data.status === "success") {
-        setNewCatName("");
+      if (res.data.status === 'success') {
+        setNewCatName('');
         // Reload list
-        const updatedCats = await apiClient.get("/categories");
+        const updatedCats = await apiClient.get('/categories');
         setCategories(updatedCats.data.data);
-        await IDBHelper.putAll("categories", updatedCats.data.data);
+        await IDBHelper.putAll('categories', updatedCats.data.data);
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed creating category.");
+      alert(err.response?.data?.message || 'Failed creating category.');
     }
   };
 
@@ -183,52 +181,52 @@ export const Settings: React.FC = () => {
   const handleAddSupplier = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOnline) {
-      alert("Online connection required.");
+      alert('Online connection required.');
       return;
     }
     if (!supName.trim()) return;
 
     try {
-      const res = await apiClient.post("/suppliers", {
+      const res = await apiClient.post('/suppliers', {
         name: supName.trim(),
         phone: supPhone.trim() || undefined,
         address: supAddress.trim() || undefined,
         gstNumber: supGst.trim() || undefined,
       });
 
-      if (res.data.status === "success") {
+      if (res.data.status === 'success') {
         setIsSupDrawerOpen(false);
-        setSupName("");
-        setSupPhone("");
-        setSupAddress("");
-        setSupGst("");
+        setSupName('');
+        setSupPhone('');
+        setSupAddress('');
+        setSupGst('');
 
         // Reload suppliers
-        const updatedSups = await apiClient.get("/suppliers");
+        const updatedSups = await apiClient.get('/suppliers');
         setSuppliers(updatedSups.data.data);
-        await IDBHelper.putAll("suppliers", updatedSups.data.data);
+        await IDBHelper.putAll('suppliers', updatedSups.data.data);
       }
     } catch (err: any) {
-      alert(err.response?.data?.message || "Failed creating supplier.");
+      alert(err.response?.data?.message || 'Failed creating supplier.');
     }
   };
 
   // Generate device link code handler
   const handleGenerateLinkCode = async () => {
     if (!isOnline) {
-      alert("You must be online to pair additional devices.");
+      alert('You must be online to pair additional devices.');
       return;
     }
 
     try {
-      const res = await apiClient.post("/auth/link-code");
+      const res = await apiClient.post('/auth/link-code');
       const { code, expiresInSeconds } = res.data.data;
       setPairingCode(code);
       setPairingTimer(expiresInSeconds);
       setIsPairingDrawerOpen(true);
     } catch (e) {
       console.error(e);
-      alert("Failed generating pairing code.");
+      alert('Failed generating pairing code.');
     }
   };
 
@@ -258,29 +256,27 @@ export const Settings: React.FC = () => {
           <div
             className={`p-3 rounded-2xl ${
               backupPending
-                ? "bg-amber-50 text-amber-500 dark:bg-amber-950/20"
-                : "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20"
+                ? 'bg-amber-50 text-amber-500 dark:bg-amber-950/20'
+                : 'bg-emerald-50 text-emerald-500 dark:bg-emerald-950/20'
             }`}
           >
             <CloudSync size={24} />
           </div>
           <div>
             <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
-              {backupPending
-                ? "Backup Sync Required"
-                : "Database Cloud Backup Valid"}
+              {backupPending ? 'Backup Sync Required' : 'Database Cloud Backup Valid'}
             </p>
             <p className="text-[10px] text-slate-400 mt-0.5 font-medium">
-              Last Synced:{" "}
+              Last Synced:{' '}
               {lastBackup
-                ? new Date(lastBackup).toLocaleString("en-IN", {
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
+                ? new Date(lastBackup).toLocaleString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
                   })
-                : "Never"}
+                : 'Never'}
             </p>
           </div>
         </div>
@@ -291,7 +287,7 @@ export const Settings: React.FC = () => {
             disabled={loading}
             className="w-full flex items-center justify-center gap-2 py-3 bg-brand-500 text-white font-bold rounded-xl text-xs transition-all active:scale-[0.98] shadow-md glow-brand"
           >
-            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span>Sync Backup to Cloud</span>
           </button>
         )}
@@ -319,12 +315,12 @@ export const Settings: React.FC = () => {
           <button
             onClick={handleToggleAppLock}
             className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none ${
-              appLockEnabled ? "bg-[#003229]" : "bg-slate-300 dark:bg-slate-700"
+              appLockEnabled ? 'bg-[#003229]' : 'bg-slate-300 dark:bg-slate-700'
             }`}
           >
             <div
               className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-                appLockEnabled ? "translate-x-4" : "translate-x-0"
+                appLockEnabled ? 'translate-x-4' : 'translate-x-0'
               }`}
             />
           </button>
@@ -353,7 +349,7 @@ export const Settings: React.FC = () => {
           </div>
         )}
       </div>
- 
+
       {/* FINANCIALS & EXPENSES */}
       <div className="p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.01)] space-y-3">
         <h2 className="text-xs font-black uppercase text-slate-400 tracking-wider">
@@ -411,15 +407,10 @@ export const Settings: React.FC = () => {
 
         <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-darkBorder bg-slate-50/50 dark:bg-darkBg/30 border border-slate-100 dark:border-darkBorder rounded-xl p-2">
           {categories.length === 0 ? (
-            <p className="text-center text-[10px] text-slate-400 py-4">
-              No categories registered.
-            </p>
+            <p className="text-center text-[10px] text-slate-400 py-4">No categories registered.</p>
           ) : (
             categories.map((c) => (
-              <div
-                key={c.id}
-                className="py-2 text-xs font-bold text-slate-700 dark:text-slate-300"
-              >
+              <div key={c.id} className="py-2 text-xs font-bold text-slate-700 dark:text-slate-300">
                 {c.name}
               </div>
             ))
@@ -448,30 +439,19 @@ export const Settings: React.FC = () => {
 
         <div className="max-h-36 overflow-y-auto divide-y divide-slate-100 dark:divide-darkBorder bg-slate-50/50 dark:bg-darkBg/30 border border-slate-100 dark:border-darkBorder rounded-xl p-2">
           {suppliers.length === 0 ? (
-            <p className="text-center text-[10px] text-slate-400 py-4">
-              No suppliers registered.
-            </p>
+            <p className="text-center text-[10px] text-slate-400 py-4">No suppliers registered.</p>
           ) : (
             suppliers.map((s) => (
-              <div
-                key={s.id}
-                className="py-2 flex justify-between text-xs items-center"
-              >
+              <div key={s.id} className="py-2 flex justify-between text-xs items-center">
                 <div>
-                  <p className="font-bold text-slate-700 dark:text-slate-300">
-                    {s.name}
-                  </p>
-                  {s.phone && (
-                    <p className="text-[9px] text-slate-400 mt-0.5">
-                      Ph: {s.phone}
-                    </p>
-                  )}
+                  <p className="font-bold text-slate-700 dark:text-slate-300">{s.name}</p>
+                  {s.phone && <p className="text-[9px] text-slate-400 mt-0.5">Ph: {s.phone}</p>}
                 </div>
                 <span
                   className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${
-                    s.status === "ACTIVE"
-                      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400"
-                      : "bg-slate-100 text-slate-500"
+                    s.status === 'ACTIVE'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-400'
+                      : 'bg-slate-100 text-slate-500'
                   }`}
                 >
                   {s.status}
@@ -578,8 +558,8 @@ export const Settings: React.FC = () => {
               Biometric Pairing Code
             </p>
             <p className="text-[10px] text-slate-400 mt-1 px-4">
-              Enter this 6-digit verification code on your new device to
-              securely bind its biometrics to this account.
+              Enter this 6-digit verification code on your new device to securely bind its
+              biometrics to this account.
             </p>
           </div>
 
@@ -598,21 +578,15 @@ export const Settings: React.FC = () => {
             </div>
           ) : (
             <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200/10 text-rose-600 rounded-xl text-xs font-semibold">
-              The pairing session has expired. Please close this window and
-              generate a new code.
+              The pairing session has expired. Please close this window and generate a new code.
             </div>
           )}
 
           <div className="p-4 bg-slate-50 dark:bg-darkBg rounded-xl text-[10px] text-slate-400 text-left space-y-1.5 border border-slate-100 dark:border-darkBorder">
             <p className="font-bold uppercase text-slate-500">Instructions:</p>
             <p>1. Open the PWA login screen on the new smartphone.</p>
-            <p>
-              2. Select "Link as Secondary Device" below the register button.
-            </p>
-            <p>
-              3. Input this 6-digit code and scan your biometrics
-              (Fingerprint/PIN).
-            </p>
+            <p>2. Select "Link as Secondary Device" below the register button.</p>
+            <p>3. Input this 6-digit code and scan your biometrics (Fingerprint/PIN).</p>
           </div>
         </div>
       </Drawer>

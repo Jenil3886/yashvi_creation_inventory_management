@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { ShieldCheck, ShieldAlert, Fingerprint } from "lucide-react";
-import { startAuthentication } from "@simplewebauthn/browser";
-import useAuthStore from "../store/useAuthStore";
-import apiClient from "../services/apiClient";
+import React, { useEffect, useState } from 'react';
+import { ShieldCheck, ShieldAlert, Fingerprint } from 'lucide-react';
+import { startAuthentication } from '@simplewebauthn/browser';
+import useAuthStore from '../store/useAuthStore';
+import apiClient from '../services/apiClient';
 
 export const AppLockScreen: React.FC = () => {
   const { userId, unlock, logout } = useAuthStore();
@@ -11,9 +11,7 @@ export const AppLockScreen: React.FC = () => {
 
   const handleBiometricUnlock = async () => {
     if (!userId) {
-      setErrorMsg(
-        "No user profile found on this device. Please register first.",
-      );
+      setErrorMsg('No user profile found on this device. Please register first.');
       return;
     }
 
@@ -22,7 +20,7 @@ export const AppLockScreen: React.FC = () => {
 
     try {
       // 1. Get options from backend
-      const optionsRes = await apiClient.post("/auth/login-options", {
+      const optionsRes = await apiClient.post('/auth/login-options', {
         userId,
       });
       const { options, stateToken } = optionsRes.data.data;
@@ -31,22 +29,19 @@ export const AppLockScreen: React.FC = () => {
       const assertionResponse = await startAuthentication(options);
 
       // 3. Verify assertion response on backend
-      const verifyRes = await apiClient.post("/auth/login-verify", {
+      const verifyRes = await apiClient.post('/auth/login-verify', {
         credentialResponse: assertionResponse,
         stateToken,
       });
 
-      if (verifyRes.data.status === "success") {
+      if (verifyRes.data.status === 'success') {
         unlock(); // Unlock App state in store
       } else {
-        setErrorMsg("Authentication failed.");
+        setErrorMsg('Authentication failed.');
       }
     } catch (err: any) {
-      console.error("Unlock error:", err);
-      setErrorMsg(
-        err.response?.data?.message ||
-          "Device verification cancelled or failed.",
-      );
+      console.error('Unlock error:', err);
+      setErrorMsg(err.response?.data?.message || 'Device verification cancelled or failed.');
     } finally {
       setIsVerifying(false);
     }
@@ -57,7 +52,7 @@ export const AppLockScreen: React.FC = () => {
     if (userId) {
       handleBiometricUnlock();
     } else {
-      setErrorMsg("No local profile detected. Please reload/register.");
+      setErrorMsg('No local profile detected. Please reload/register.');
     }
   }, [userId]);
 
@@ -81,13 +76,13 @@ export const AppLockScreen: React.FC = () => {
           disabled={isVerifying}
           className={`w-28 h-28 rounded-full flex flex-col items-center justify-center border transition-all duration-200 ${
             isVerifying
-              ? "border-brand-500 bg-[#003229]/10 scale-105 animate-pulse text-brand-400"
-              : "border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-400 active:scale-95"
+              ? 'border-brand-500 bg-[#003229]/10 scale-105 animate-pulse text-brand-400'
+              : 'border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-400 active:scale-95'
           }`}
         >
           <Fingerprint size={48} className="stroke-[1.5]" />
           <span className="text-[11px] mt-2 font-medium">
-            {isVerifying ? "Verifying..." : "Tap to Unlock"}
+            {isVerifying ? 'Verifying...' : 'Tap to Unlock'}
           </span>
         </button>
 

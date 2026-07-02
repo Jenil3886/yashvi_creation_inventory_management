@@ -4,7 +4,7 @@ if (typeof window !== 'undefined') {
     env: {
       VITE_API_URL: import.meta.env.VITE_API_URL || '',
       NODE_ENV: import.meta.env.MODE || 'development',
-    }
+    },
   };
 }
 
@@ -14,7 +14,9 @@ if (import.meta.env.DEV && 'serviceWorker' in navigator) {
     for (const registration of registrations) {
       registration.unregister().then((success) => {
         if (success) {
-          console.warn('Cleared stale production Service Worker to allow local dev server to boot.');
+          console.warn(
+            'Cleared stale production Service Worker to allow local dev server to boot.',
+          );
           window.location.reload(); // Reload to fetch fresh files
         }
       });
@@ -34,5 +36,5 @@ useThemeStore.getState().initTheme();
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
-  </StrictMode>
+  </StrictMode>,
 );

@@ -1,9 +1,9 @@
-import React from "react";
-import { Wifi, WifiOff, Sun, Moon, CloudSync } from "lucide-react";
-import useOfflineStore from "../store/useOfflineStore";
-import useThemeStore from "../store/useThemeStore";
-import yashviWebLogoImg from "../assets/Yashvi_web_logo.png";
-import yashviLogoImg from "../assets/yashvilogo.png";
+import React from 'react';
+import { Wifi, WifiOff, Sun, Moon, CloudSync } from 'lucide-react';
+import useOfflineStore from '../store/useOfflineStore';
+import useThemeStore from '../store/useThemeStore';
+import yashviWebLogoImg from '../assets/Yashvi_web_logo.png';
+import yashviLogoImg from '../assets/yashvilogo.png';
 
 interface HeaderProps {
   title: string;
@@ -15,7 +15,7 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
 
   // Dynamic logo selection based on active theme
   // const activeLogo = theme === 'dark' ? yashviWebLogoImg : yashviLogoImg;
-  const activeLogo = theme === "dark" ? yashviWebLogoImg : yashviWebLogoImg;
+  const activeLogo = theme === 'dark' ? yashviWebLogoImg : yashviWebLogoImg;
 
   return (
     <header className="sticky top-0 z-30 w-full bg-white/80 dark:bg-darkCard/80 backdrop-blur-md border-b border-slate-200 dark:border-darkBorder px-4 h-20 flex items-center justify-between">
@@ -40,12 +40,12 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
             disabled={!isOnline || isSyncing}
             className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full transition-all active:scale-95 ${
               isOnline
-                ? "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse"
-                : "bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400"
+                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 animate-pulse'
+                : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
             }`}
             title={`${offlineQueue.length} unsynced purchase(s)`}
           >
-            <CloudSync size={15} className={isSyncing ? "animate-spin" : ""} />
+            <CloudSync size={15} className={isSyncing ? 'animate-spin' : ''} />
             <span>{offlineQueue.length} queued</span>
           </button>
         )}
@@ -68,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({ title }) => {
           className="p-2 text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full transition-colors active:scale-90"
           aria-label="Toggle Theme"
         >
-          {theme === "light" ? <Moon size={22} /> : <Sun size={22} />}
+          {theme === 'light' ? <Moon size={22} /> : <Sun size={22} />}
         </button>
       </div>
     </header>

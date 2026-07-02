@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import React, { useEffect, useState, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Search,
   Plus,
@@ -10,13 +10,14 @@ import {
   Filter,
   PackageCheck,
   Image as ImageIcon,
-} from "lucide-react";
-import useOfflineStore from "../store/useOfflineStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
-import Drawer from "../components/Drawer";
+  Sliders,
+} from 'lucide-react';
+import useOfflineStore from '../store/useOfflineStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
+import Drawer from '../components/Drawer';
 
-const defaultProductImg = "/pwa-192x192.png";
+const defaultProductImg = '/AppIcon.png'; // Placeholder image for products without an image
 
 interface Product {
   id: string;
@@ -49,24 +50,79 @@ export const Products: React.FC = () => {
   const fetchingRef = useRef(false);
 
   // Filters
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("");
-  const [filterLowStock, setFilterLowStock] = useState(
-    searchParams.get("lowStock") === "true",
-  );
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [filterLowStock, setFilterLowStock] = useState(searchParams.get('lowStock') === 'true');
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
 
   // Drawer Form States
   const [isFormDrawerOpen, setIsFormDrawerOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [formName, setFormName] = useState("");
-  const [formCategoryId, setFormCategoryId] = useState("");
-  const [formPrice, setFormPrice] = useState("");
+  const [formName, setFormName] = useState('');
+  const [formCategoryId, setFormCategoryId] = useState('');
+  const [formPrice, setFormPrice] = useState('');
   const [formActive, setFormActive] = useState(true);
   const [formImageFile, setFormImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Stock Adjustment States
+  const [isAdjustDrawerOpen, setIsAdjustDrawerOpen] = useState(false);
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | null>(null);
+  const [adjustType, setAdjustType] = useState<'ADD' | 'SUBTRACT' | 'SET'>('ADD');
+  const [adjustQty, setAdjustQty] = useState('');
+  const [adjustRemarks, setAdjustRemarks] = useState('');
+  const [adjustError, setAdjustError] = useState<string | null>(null);
+  const [adjusting, setAdjusting] = useState(false);
+
+  const handleOpenAdjust = (p: Product) => {
+    setAdjustingProduct(p);
+    setAdjustType('ADD');
+    setAdjustQty('');
+    setAdjustRemarks('');
+    setAdjustError(null);
+    setIsAdjustDrawerOpen(true);
+  };
+
+  const handleAdjustStock = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isOnline) {
+      setAdjustError('You must be online to adjust stock.');
+      return;
+    }
+    if (!adjustingProduct || !adjustQty) {
+      setAdjustError('Please enter a quantity.');
+      return;
+    }
+
+    const qty = parseInt(adjustQty);
+    if (isNaN(qty) || qty < 0) {
+      setAdjustError('Quantity must be a positive integer.');
+      return;
+    }
+
+    setAdjusting(true);
+    setAdjustError(null);
+
+    try {
+      const response = await apiClient.post(`/products/${adjustingProduct.id}/adjust-stock`, {
+        adjustmentType: adjustType,
+        quantity: qty,
+        remarks: adjustRemarks.trim() || undefined,
+      });
+
+      if (response.data.status === 'success') {
+        setIsAdjustDrawerOpen(false);
+        await loadData(); // Reload products to show updated stock
+      }
+    } catch (err: any) {
+      console.error(err);
+      setAdjustError(err.response?.data?.message || 'Failed to adjust stock.');
+    } finally {
+      setAdjusting(false);
+    }
+  };
 
   // Load products and categories with Stale-While-Revalidate (SWR) caching
   const loadData = async () => {
@@ -74,8 +130,8 @@ export const Products: React.FC = () => {
     fetchingRef.current = true;
 
     // 1. Immediately render cached data from IndexedDB (under 5ms) to avoid loading spinner
-    const cachedProds = await IDBHelper.getAll<Product>("products");
-    const cachedCats = await IDBHelper.getAll<Category>("categories");
+    const cachedProds = await IDBHelper.getAll<Product>('products');
+    const cachedCats = await IDBHelper.getAll<Category>('categories');
 
     if (cachedProds.length > 0 || cachedCats.length > 0) {
       setProducts(cachedProds);
@@ -88,8 +144,8 @@ export const Products: React.FC = () => {
     // 2. Fetch fresh data from API in background if online
     if (isOnline) {
       try {
-        const prodRes = await apiClient.get("/products");
-        const catRes = await apiClient.get("/categories");
+        const prodRes = await apiClient.get('/products');
+        const catRes = await apiClient.get('/categories');
 
         const prods = prodRes.data.data;
         const cats = catRes.data.data;
@@ -98,12 +154,12 @@ export const Products: React.FC = () => {
         setCategories(cats);
 
         // Update IndexedDB cache
-        await IDBHelper.clear("products");
-        await IDBHelper.putAll("products", prods);
-        await IDBHelper.clear("categories");
-        await IDBHelper.putAll("categories", cats);
+        await IDBHelper.clear('products');
+        await IDBHelper.putAll('products', prods);
+        await IDBHelper.clear('categories');
+        await IDBHelper.putAll('categories', cats);
       } catch (err) {
-        console.error("Failed fetching online products, using cache:", err);
+        console.error('Failed fetching online products, using cache:', err);
       } finally {
         setLoading(false);
         fetchingRef.current = false;
@@ -115,14 +171,14 @@ export const Products: React.FC = () => {
   };
 
   const loadFromLocal = async () => {
-    const cachedProds = await IDBHelper.getAll<Product>("products");
-    const cachedCats = await IDBHelper.getAll<Category>("categories");
+    const cachedProds = await IDBHelper.getAll<Product>('products');
+    const cachedCats = await IDBHelper.getAll<Category>('categories');
     setProducts(cachedProds);
     setCategories(cachedCats);
   };
 
   const handleDeleteProduct = async (id: string) => {
-    if (!window.confirm("Are you sure you want to delete this product?")) {
+    if (!window.confirm('Are you sure you want to delete this product?')) {
       return;
     }
     try {
@@ -130,10 +186,8 @@ export const Products: React.FC = () => {
       await apiClient.delete(`/products/${id}`);
       await loadData();
     } catch (err: any) {
-      console.error("Failed to delete product:", err);
-      alert(
-        err.response?.data?.message || "Error occurred while deleting product.",
-      );
+      console.error('Failed to delete product:', err);
+      alert(err.response?.data?.message || 'Error occurred while deleting product.');
       setLoading(false);
     }
   };
@@ -147,17 +201,15 @@ export const Products: React.FC = () => {
     let result = [...products];
 
     // Search term matching
-    if (searchTerm.trim() !== "") {
+    if (searchTerm.trim() !== '') {
       const term = searchTerm.toLowerCase().trim();
       result = result.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.sku.toLowerCase().includes(term),
+        (p) => p.name.toLowerCase().includes(term) || p.sku.toLowerCase().includes(term),
       );
     }
 
     // Category filter
-    if (selectedCategory !== "") {
+    if (selectedCategory !== '') {
       result = result.filter((p) => p.categoryId === selectedCategory);
     }
 
@@ -172,9 +224,9 @@ export const Products: React.FC = () => {
   // Handle open Form drawer for ADD
   const handleOpenAdd = () => {
     setEditingProduct(null);
-    setFormName("");
-    setFormCategoryId(categories[0]?.id || "");
-    setFormPrice("");
+    setFormName('');
+    setFormCategoryId(categories[0]?.id || '');
+    setFormPrice('');
     setFormActive(true);
     setFormImageFile(null);
     setImagePreview(null);
@@ -212,14 +264,12 @@ export const Products: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isOnline) {
-      setFormError(
-        "You must be online to create or update product master details.",
-      );
+      setFormError('You must be online to create or update product master details.');
       return;
     }
 
     if (!formName || !formCategoryId || !formPrice) {
-      setFormError("Please fill in all mandatory fields.");
+      setFormError('Please fill in all mandatory fields.');
       return;
     }
 
@@ -228,43 +278,37 @@ export const Products: React.FC = () => {
 
     try {
       const formData = new FormData();
-      formData.append("name", formName.trim());
-      formData.append("categoryId", formCategoryId);
-      formData.append("purchasePrice", formPrice);
-      formData.append("active", String(formActive));
+      formData.append('name', formName.trim());
+      formData.append('categoryId', formCategoryId);
+      formData.append('purchasePrice', formPrice);
+      formData.append('active', String(formActive));
 
       if (formImageFile) {
-        formData.append("image", formImageFile);
+        formData.append('image', formImageFile);
       }
 
       let response;
       if (editingProduct) {
         // PUT
-        response = await apiClient.put(
-          `/products/${editingProduct.id}`,
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          },
-        );
+        response = await apiClient.put(`/products/${editingProduct.id}`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
       } else {
         // POST
-        response = await apiClient.post("/products", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
+        response = await apiClient.post('/products', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
 
-      if (response.data.status === "success") {
+      if (response.data.status === 'success') {
         setIsFormDrawerOpen(false);
         loadData(); // reload
       } else {
-        setFormError("Action failed.");
+        setFormError('Action failed.');
       }
     } catch (err: any) {
       console.error(err);
-      setFormError(
-        err.response?.data?.message || "Error occurred while saving product.",
-      );
+      setFormError(err.response?.data?.message || 'Error occurred while saving product.');
     } finally {
       setSubmitting(false);
     }
@@ -291,8 +335,8 @@ export const Products: React.FC = () => {
           onClick={() => setShowFiltersDrawer(true)}
           className={`p-3 rounded-2xl border transition-all active:scale-95 ${
             selectedCategory || filterLowStock
-              ? "bg-brand-500 border-brand-500 text-white shadow-lg shadow-brand-500/20"
-              : "bg-white dark:bg-darkCard border-slate-200 dark:border-darkBorder text-slate-500 dark:text-slate-400"
+              ? 'bg-brand-500 border-brand-500 text-white shadow-lg shadow-brand-500/20'
+              : 'bg-white dark:bg-darkCard border-slate-200 dark:border-darkBorder text-slate-500 dark:text-slate-400'
           }`}
           title="Filter Options"
         >
@@ -322,11 +366,9 @@ export const Products: React.FC = () => {
         <div className="flex flex-wrap gap-2 px-1">
           {selectedCategory && (
             <span className="flex items-center gap-1 text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full">
-              Category:{" "}
-              {categories.find((c) => c.id === selectedCategory)?.name ||
-                "Unknown"}
+              Category: {categories.find((c) => c.id === selectedCategory)?.name || 'Unknown'}
               <button
-                onClick={() => setSelectedCategory("")}
+                onClick={() => setSelectedCategory('')}
                 className="hover:text-red-500 font-bold ml-1"
               >
                 ×
@@ -367,8 +409,8 @@ export const Products: React.FC = () => {
                 key={p.id}
                 className={`relative flex items-center justify-between p-3.5 bg-white dark:bg-darkCard border rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.02)] transition-all ${
                   isLowStock
-                    ? "border-red-200/50 dark:border-red-950/40 bg-red-50/10 dark:bg-red-950/5"
-                    : "border-slate-100 dark:border-darkBorder"
+                    ? 'border-red-200/50 dark:border-red-950/40 bg-red-50/10 dark:bg-red-950/5'
+                    : 'border-slate-100 dark:border-darkBorder'
                 }`}
               >
                 <div className="flex items-center gap-3">
@@ -397,7 +439,7 @@ export const Products: React.FC = () => {
                       {p.sku}
                     </p>
                     <p className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 rounded-full inline-block mt-1 font-semibold">
-                      {p.category?.name || "Category"}
+                      {p.category?.name || 'Category'}
                     </p>
                   </div>
                 </div>
@@ -408,23 +450,27 @@ export const Products: React.FC = () => {
                     <span
                       className={`font-black text-xs px-2 py-0.5 rounded-md ${
                         isLowStock
-                          ? "bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-400"
-                          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400"
+                          ? 'bg-red-100 text-red-700 dark:bg-red-950/70 dark:text-red-400'
+                          : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
                       }`}
                     >
                       Stock: {p.currentStock || 0}
                     </span>
                     <p className="text-[9px] text-slate-400 mt-1 font-semibold">
-                      Price: ₹
-                      {parseFloat(p.purchasePrice.toString()).toLocaleString(
-                        "en-IN",
-                      )}
+                      Price: ₹{parseFloat(p.purchasePrice.toString()).toLocaleString('en-IN')}
                     </p>
                   </div>
 
                   {/* Actions */}
                   {isOnline && (
                     <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => handleOpenAdjust(p)}
+                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 rounded-xl transition-all"
+                        title="Adjust Stock"
+                      >
+                        <Sliders size={14} />
+                      </button>
                       <button
                         onClick={() => handleOpenEdit(p)}
                         className="p-2 text-slate-400 dark:text-slate-500 hover:text-brand-500 dark:hover:text-brand-400 bg-slate-50 dark:bg-slate-800/40 hover:bg-brand-50 rounded-xl transition-all"
@@ -484,19 +530,17 @@ export const Products: React.FC = () => {
               <p className="text-xs font-bold text-slate-700 dark:text-slate-200">
                 Low Stock Threshold (≤ 5)
               </p>
-              <p className="text-[10px] text-slate-400">
-                Show products with critical inventory.
-              </p>
+              <p className="text-[10px] text-slate-400">Show products with critical inventory.</p>
             </div>
             <button
               onClick={() => setFilterLowStock(!filterLowStock)}
               className={`w-10 h-6 flex items-center rounded-full p-1 transition-colors duration-200 focus:outline-none ${
-                filterLowStock ? "bg-red-500" : "bg-slate-300 dark:bg-slate-700"
+                filterLowStock ? 'bg-red-500' : 'bg-slate-300 dark:bg-slate-700'
               }`}
             >
               <div
                 className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-200 ${
-                  filterLowStock ? "translate-x-4" : "translate-x-0"
+                  filterLowStock ? 'translate-x-4' : 'translate-x-0'
                 }`}
               />
             </button>
@@ -515,9 +559,7 @@ export const Products: React.FC = () => {
       <Drawer
         isOpen={isFormDrawerOpen}
         onClose={() => setIsFormDrawerOpen(false)}
-        title={
-          editingProduct ? "Edit Product Master" : "Add New Product Master"
-        }
+        title={editingProduct ? 'Edit Product Master' : 'Add New Product Master'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           {formError && (
@@ -605,11 +647,7 @@ export const Products: React.FC = () => {
             <div className="flex items-center gap-3">
               {imagePreview ? (
                 <div className="relative w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-darkBorder overflow-hidden">
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                   <button
                     type="button"
                     onClick={() => {
@@ -624,9 +662,7 @@ export const Products: React.FC = () => {
               ) : (
                 <label className="w-20 h-20 flex flex-col items-center justify-center border-2 border-dashed border-slate-300 dark:border-darkBorder hover:border-brand-500 dark:hover:border-brand-400 rounded-xl cursor-pointer bg-slate-50 dark:bg-slate-800/20 text-slate-400 transition-colors">
                   <ImageIcon size={20} />
-                  <span className="text-[8px] font-bold uppercase mt-1">
-                    Upload
-                  </span>
+                  <span className="text-[8px] font-bold uppercase mt-1">Upload</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -650,16 +686,114 @@ export const Products: React.FC = () => {
             {editingProduct ? (
               <>
                 <PackageCheck size={16} />
-                <span>
-                  {submitting ? "Saving Changes..." : "Save Product Master"}
-                </span>
+                <span>{submitting ? 'Saving Changes...' : 'Save Product Master'}</span>
               </>
             ) : (
               <>
                 <Plus size={16} />
-                <span>{submitting ? "Adding..." : "Add Product Master"}</span>
+                <span>{submitting ? 'Adding...' : 'Add Product Master'}</span>
               </>
             )}
+          </button>
+        </form>
+      </Drawer>
+
+      {/* STOCK ADJUSTMENT DRAWER BOTTOM SHEET */}
+      <Drawer
+        isOpen={isAdjustDrawerOpen}
+        onClose={() => setIsAdjustDrawerOpen(false)}
+        title={`Adjust Stock: ${adjustingProduct?.name || ''}`}
+      >
+        <form onSubmit={handleAdjustStock} className="space-y-4">
+          {adjustError && (
+            <div className="p-3 bg-rose-50 border border-rose-200 text-rose-600 rounded-xl text-xs font-semibold">
+              {adjustError}
+            </div>
+          )}
+
+          {/* Current Stock Info */}
+          <div className="p-3.5 bg-slate-50 dark:bg-darkBg rounded-xl border border-slate-100 dark:border-darkBorder text-center">
+            <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+              Current Stock
+            </span>
+            <p className="text-xl font-black text-slate-800 dark:text-slate-200 mt-0.5">
+              {adjustingProduct?.currentStock || 0} units
+            </p>
+          </div>
+
+          {/* Adjustment Action Selection */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Adjustment Type
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {(['ADD', 'SUBTRACT', 'SET'] as const).map((type) => {
+                const isSelected = adjustType === type;
+                let label = 'Add (+)';
+                let activeClass = 'bg-emerald-500 border-emerald-500 text-white';
+                if (type === 'SUBTRACT') {
+                  label = 'Remove (-)';
+                  activeClass = 'bg-rose-500 border-rose-500 text-white';
+                } else if (type === 'SET') {
+                  label = 'Overwrite (=)';
+                  activeClass = 'bg-blue-500 border-blue-500 text-white';
+                }
+
+                return (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => setAdjustType(type)}
+                    className={`py-2 px-3 border rounded-xl text-[10px] font-black uppercase text-center transition-all ${
+                      isSelected
+                        ? activeClass
+                        : 'border-slate-200 dark:border-darkBorder text-slate-500 dark:text-slate-400 bg-white dark:bg-darkBg'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Quantity Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Adjustment Quantity *
+            </label>
+            <input
+              type="number"
+              required
+              min="1"
+              value={adjustQty}
+              onChange={(e) => setAdjustQty(e.target.value)}
+              placeholder="e.g. 10"
+              className="w-full px-3 py-3 border border-slate-200 dark:border-darkBorder bg-slate-50 dark:bg-darkBg rounded-xl text-xs focus:outline-none dark:text-slate-100 font-bold"
+            />
+          </div>
+
+          {/* Remarks */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+              Reason / Remarks (Optional)
+            </label>
+            <input
+              type="text"
+              value={adjustRemarks}
+              onChange={(e) => setAdjustRemarks(e.target.value)}
+              placeholder="e.g. Physical inventory mismatch"
+              className="w-full px-3 py-3 border border-slate-200 dark:border-darkBorder bg-slate-50 dark:bg-darkBg rounded-xl text-xs focus:outline-none dark:text-slate-100"
+            />
+          </div>
+
+          {/* Submit Action */}
+          <button
+            type="submit"
+            disabled={adjusting}
+            className="w-full py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-xs uppercase tracking-wider mt-2"
+          >
+            {adjusting ? 'Updating Stock...' : 'Apply Stock Adjustment'}
           </button>
         </form>
       </Drawer>

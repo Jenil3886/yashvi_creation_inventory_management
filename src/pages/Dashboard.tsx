@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   TrendingUp,
   Boxes,
@@ -10,11 +10,11 @@ import {
   History,
   Barcode,
   Landmark,
-} from "lucide-react";
-import useOfflineStore from "../store/useOfflineStore";
-import type { OfflineExpense } from "../store/useOfflineStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
+} from 'lucide-react';
+import useOfflineStore from '../store/useOfflineStore';
+import type { OfflineExpense } from '../store/useOfflineStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
 
 interface SummaryData {
   todayPurchase: number;
@@ -48,16 +48,13 @@ export const Dashboard: React.FC = () => {
     fetchingRef.current = true;
 
     // 1. Immediately load and render dashboard data from local cache
-    const cachedDashboardRaw = await IDBHelper.get(
-      "settings",
-      "cached_dashboard",
-    );
+    const cachedDashboardRaw = await IDBHelper.get('settings', 'cached_dashboard');
     if (cachedDashboardRaw) {
       try {
         setData(JSON.parse(cachedDashboardRaw.value));
         setLoading(false); // Disable spinner immediately
       } catch (e) {
-        console.error("Error parsing dashboard cache:", e);
+        console.error('Error parsing dashboard cache:', e);
       }
     } else {
       setLoading(true);
@@ -67,34 +64,31 @@ export const Dashboard: React.FC = () => {
     if (isOnline) {
       try {
         // Fetch from API
-        const res = await apiClient.get("/reports/dashboard-summary");
+        const res = await apiClient.get('/reports/dashboard-summary');
         const summary = res.data.data;
         setData(summary);
 
         // Cache master data in IndexedDB
-        await IDBHelper.put("settings", {
-          key: "cached_dashboard",
+        await IDBHelper.put('settings', {
+          key: 'cached_dashboard',
           value: JSON.stringify(summary),
         });
 
         // Background update master caches while online
         try {
-          const prodRes = await apiClient.get("/products");
-          await IDBHelper.putAll("products", prodRes.data.data);
+          const prodRes = await apiClient.get('/products');
+          await IDBHelper.putAll('products', prodRes.data.data);
 
-          const catRes = await apiClient.get("/categories");
-          await IDBHelper.putAll("categories", catRes.data.data);
+          const catRes = await apiClient.get('/categories');
+          await IDBHelper.putAll('categories', catRes.data.data);
 
-          const supRes = await apiClient.get("/suppliers");
-          await IDBHelper.putAll("suppliers", supRes.data.data);
+          const supRes = await apiClient.get('/suppliers');
+          await IDBHelper.putAll('suppliers', supRes.data.data);
         } catch (e) {
-          console.warn("Silent master sync warning:", e);
+          console.warn('Silent master sync warning:', e);
         }
       } catch (err) {
-        console.error(
-          "Failed fetching online dashboard, using local fallback:",
-          err,
-        );
+        console.error('Failed fetching online dashboard, using local fallback:', err);
       } finally {
         setLoading(false);
         fetchingRef.current = false;
@@ -110,13 +104,10 @@ export const Dashboard: React.FC = () => {
   const loadFromLocalCache = async () => {
     try {
       // Load products from IndexedDB to compute inventory value and low stock
-      const localProducts = await IDBHelper.getAll("products");
-      const queuedPurchases = await IDBHelper.getAll("offline_purchases");
+      const localProducts = await IDBHelper.getAll('products');
+      const queuedPurchases = await IDBHelper.getAll('offline_purchases');
 
-      const cachedDashboardRaw = await IDBHelper.get(
-        "settings",
-        "cached_dashboard",
-      );
+      const cachedDashboardRaw = await IDBHelper.get('settings', 'cached_dashboard');
       let cachedDashboard: SummaryData = {
         todayPurchase: 0,
         currentMonthPurchase: 0,
@@ -134,14 +125,11 @@ export const Dashboard: React.FC = () => {
       }
 
       // 1. Calculate Inventory Valuation from IndexedDB Products
-      const computedInventoryValue = localProducts.reduce(
-        (sum: number, p: any) => {
-          const stock = p.currentStock || 0;
-          const price = parseFloat(p.purchasePrice || 0);
-          return sum + stock * price;
-        },
-        0,
-      );
+      const computedInventoryValue = localProducts.reduce((sum: number, p: any) => {
+        const stock = p.currentStock || 0;
+        const price = parseFloat(p.purchasePrice || 0);
+        return sum + stock * price;
+      }, 0);
 
       // 2. Count low stock products locally
       const computedLowStockProducts = localProducts.filter(
@@ -149,61 +137,45 @@ export const Dashboard: React.FC = () => {
       );
 
       // 3. Today's Purchases (offline additions + cached values)
-      const today = new Date().toISOString().split("T")[0];
-      const todayOfflineAmt = queuedPurchases.reduce(
-        (sum: number, invoice: any) => {
-          const date = invoice.purchaseDate.split("T")[0];
-          return date === today ? sum + invoice.totalAmount : sum;
-        },
-        0,
-      );
+      const today = new Date().toISOString().split('T')[0];
+      const todayOfflineAmt = queuedPurchases.reduce((sum: number, invoice: any) => {
+        const date = invoice.purchaseDate.split('T')[0];
+        return date === today ? sum + invoice.totalAmount : sum;
+      }, 0);
 
       // 4. Month Purchases
       const currentMonth = new Date().getMonth();
       const currentYear = new Date().getFullYear();
-      const monthOfflineAmt = queuedPurchases.reduce(
-        (sum: number, invoice: any) => {
-          const invoiceDate = new Date(invoice.purchaseDate);
-          return invoiceDate.getMonth() === currentMonth &&
-            invoiceDate.getFullYear() === currentYear
-            ? sum + invoice.totalAmount
-            : sum;
-        },
-        0,
-      );
+      const monthOfflineAmt = queuedPurchases.reduce((sum: number, invoice: any) => {
+        const invoiceDate = new Date(invoice.purchaseDate);
+        return invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear
+          ? sum + invoice.totalAmount
+          : sum;
+      }, 0);
 
       // 5. Month Expenses (offline + cached)
-      const cachedExpenses = await IDBHelper.getAll<OfflineExpense>("expenses");
-      const queuedExpenses = await IDBHelper.getAll<OfflineExpense>("offline_expenses");
+      const cachedExpenses = await IDBHelper.getAll<OfflineExpense>('expenses');
+      const queuedExpenses = await IDBHelper.getAll<OfflineExpense>('offline_expenses');
       const allExpenses = cachedExpenses.concat(queuedExpenses);
-      const monthOfflineExpenseAmt = allExpenses.reduce(
-        (sum: number, exp: any) => {
-          const expDate = new Date(exp.expenseDate);
-          return expDate.getMonth() === currentMonth &&
-            expDate.getFullYear() === currentYear
-            ? sum + Number(exp.amount)
-            : sum;
-        },
-        0,
-      );
- 
+      const monthOfflineExpenseAmt = allExpenses.reduce((sum: number, exp: any) => {
+        const expDate = new Date(exp.expenseDate);
+        return expDate.getMonth() === currentMonth && expDate.getFullYear() === currentYear
+          ? sum + Number(exp.amount)
+          : sum;
+      }, 0);
+
       // Merge results
       setData({
         todayPurchase: cachedDashboard.todayPurchase + todayOfflineAmt,
-        currentMonthPurchase:
-          cachedDashboard.currentMonthPurchase + monthOfflineAmt,
-        currentMonthExpense:
-          (cachedDashboard.currentMonthExpense || 0) + monthOfflineExpenseAmt,
-        inventoryValue:
-          computedInventoryValue || cachedDashboard.inventoryValue,
+        currentMonthPurchase: cachedDashboard.currentMonthPurchase + monthOfflineAmt,
+        currentMonthExpense: (cachedDashboard.currentMonthExpense || 0) + monthOfflineExpenseAmt,
+        inventoryValue: computedInventoryValue || cachedDashboard.inventoryValue,
         lowStockCount: computedLowStockProducts.length,
-        recentPurchases: queuedPurchases
-          .concat(cachedDashboard.recentPurchases)
-          .slice(0, 5),
+        recentPurchases: queuedPurchases.concat(cachedDashboard.recentPurchases).slice(0, 5),
         lowStockProducts: computedLowStockProducts.slice(0, 5),
       });
     } catch (e) {
-      console.error("Failed computing offline metrics", e);
+      console.error('Failed computing offline metrics', e);
     }
   };
 
@@ -214,31 +186,31 @@ export const Dashboard: React.FC = () => {
   const stats = [
     {
       title: "Today's Purchases",
-      value: `₹${(data.todayPurchase ?? 0).toLocaleString("en-IN")}`,
+      value: `₹${(data.todayPurchase ?? 0).toLocaleString('en-IN')}`,
       icon: TrendingUp,
-      color: "bg-brand-500 text-white",
-      textColor: "text-brand-600 dark:text-brand-400",
+      color: 'bg-brand-500 text-white',
+      textColor: 'text-brand-600 dark:text-brand-400',
     },
     {
-      title: "Current Month Purchases",
-      value: `₹${(data.currentMonthPurchase ?? 0).toLocaleString("en-IN")}`,
+      title: 'Current Month Purchases',
+      value: `₹${(data.currentMonthPurchase ?? 0).toLocaleString('en-IN')}`,
       icon: FileSpreadsheet,
-      color: "bg-indigo-500 text-white",
-      textColor: "text-indigo-600 dark:text-indigo-400",
+      color: 'bg-indigo-500 text-white',
+      textColor: 'text-indigo-600 dark:text-indigo-400',
     },
     {
-      title: "Current Month Expenses",
-      value: `₹${(data.currentMonthExpense ?? 0).toLocaleString("en-IN")}`,
+      title: 'Current Month Expenses',
+      value: `₹${(data.currentMonthExpense ?? 0).toLocaleString('en-IN')}`,
       icon: Landmark,
-      color: "bg-rose-500 text-white",
-      textColor: "text-rose-600 dark:text-rose-400",
+      color: 'bg-rose-500 text-white',
+      textColor: 'text-rose-600 dark:text-rose-400',
     },
     {
-      title: "Inventory Valuation",
-      value: `₹${(data.inventoryValue ?? 0).toLocaleString("en-IN")}`,
+      title: 'Inventory Valuation',
+      value: `₹${(data.inventoryValue ?? 0).toLocaleString('en-IN')}`,
       icon: Boxes,
-      color: "bg-emerald-500 text-white",
-      textColor: "text-emerald-600 dark:text-emerald-400",
+      color: 'bg-emerald-500 text-white',
+      textColor: 'text-emerald-600 dark:text-emerald-400',
     },
   ];
 
@@ -249,8 +221,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-semibold animate-pulse">
           <AlertTriangle size={15} />
           <span>
-            Offline Mode. Valuation calculated from device cache. Invoices
-            queued locally.
+            Offline Mode. Valuation calculated from device cache. Invoices queued locally.
           </span>
         </div>
       )}
@@ -269,12 +240,10 @@ export const Dashboard: React.FC = () => {
                   {stat.title}
                 </span>
                 <p className="text-xl font-black text-slate-800 dark:text-slate-100">
-                  {loading ? "..." : stat.value}
+                  {loading ? '...' : stat.value}
                 </p>
               </div>
-              <div
-                className={`p-3 rounded-2xl ${stat.textColor} bg-slate-50 dark:bg-slate-800/40`}
-              >
+              <div className={`p-3 rounded-2xl ${stat.textColor} bg-slate-50 dark:bg-slate-800/40`}>
                 <Icon size={24} className="stroke-[2]" />
               </div>
             </div>
@@ -289,7 +258,7 @@ export const Dashboard: React.FC = () => {
         </h2>
         <div className="grid grid-cols-3 gap-3">
           <button
-            onClick={() => navigate("/purchase-entry")}
+            onClick={() => navigate('/purchase-entry')}
             className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
           >
             <PlusCircle size={22} className="text-brand-500 mb-2" />
@@ -298,7 +267,7 @@ export const Dashboard: React.FC = () => {
             </span>
           </button>
           <button
-            onClick={() => navigate("/products")}
+            onClick={() => navigate('/products')}
             className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
           >
             <Package size={22} className="text-emerald-500 mb-2" />
@@ -307,7 +276,7 @@ export const Dashboard: React.FC = () => {
             </span>
           </button>
           <button
-            onClick={() => navigate("/expenses")}
+            onClick={() => navigate('/expenses')}
             className="flex flex-col items-center justify-center p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-all active:scale-[0.97]"
           >
             <Landmark size={22} className="text-amber-500 mb-2" />
@@ -329,7 +298,7 @@ export const Dashboard: React.FC = () => {
               </h3>
             </div>
             <button
-              onClick={() => navigate("/products?lowStock=true")}
+              onClick={() => navigate('/products?lowStock=true')}
               className="text-[10px] font-bold text-red-500 hover:text-red-600 dark:text-red-400 underline uppercase"
             >
               View All
@@ -338,13 +307,10 @@ export const Dashboard: React.FC = () => {
 
           <div className="divide-y divide-red-100/50 dark:divide-red-900/10">
             {data.lowStockProducts.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between py-2 text-xs"
-              >
+              <div key={p.id} className="flex items-center justify-between py-2 text-xs">
                 <div className="flex items-center gap-2">
                   <img
-                    src={p.imageUrl || "/assets/placeholder-product.png"}
+                    src={p.imageUrl || '/assets/placeholder-product.png'}
                     alt={p.name}
                     className="w-8 h-8 rounded-lg object-cover bg-slate-100 dark:bg-slate-800"
                     onError={(e) => {
@@ -353,9 +319,7 @@ export const Dashboard: React.FC = () => {
                     }}
                   />
                   <div>
-                    <p className="font-bold text-slate-800 dark:text-slate-200">
-                      {p.name}
-                    </p>
+                    <p className="font-bold text-slate-800 dark:text-slate-200">{p.name}</p>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
                       {p.sku}
                     </p>
@@ -379,7 +343,7 @@ export const Dashboard: React.FC = () => {
             Recent Purchases
           </h2>
           <button
-            onClick={() => navigate("/history")}
+            onClick={() => navigate('/history')}
             className="text-[10px] font-bold text-brand-500 dark:text-brand-400 uppercase tracking-wider hover:underline"
           >
             History
@@ -395,7 +359,7 @@ export const Dashboard: React.FC = () => {
             data.recentPurchases.map((inv) => (
               <div
                 key={inv.id}
-                onClick={() => navigate("/history")}
+                onClick={() => navigate('/history')}
                 className="flex items-center justify-between p-3.5 hover:bg-slate-50 dark:hover:bg-slate-800/10 cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-3">
@@ -407,29 +371,22 @@ export const Dashboard: React.FC = () => {
                       <p className="font-bold text-xs text-slate-800 dark:text-slate-200">
                         #{inv.invoiceNumber}
                       </p>
-                      {inv.id.startsWith("offline_") && (
+                      {inv.id.startsWith('offline_') && (
                         <span className="text-[8px] bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">
                           Queued
                         </span>
                       )}
                     </div>
                     <p className="text-[10px] text-slate-400 dark:text-slate-500 font-semibold mt-0.5">
-                      {inv.supplier?.name ||
-                        inv.supplierName ||
-                        "Unknown Supplier"}
+                      {inv.supplier?.name || inv.supplierName || 'Unknown Supplier'}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
                   <p className="font-black text-xs text-slate-800 dark:text-slate-200">
-                    ₹
-                    {parseFloat(inv.totalAmount.toString()).toLocaleString(
-                      "en-IN",
-                    )}
+                    ₹{parseFloat(inv.totalAmount.toString()).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">
-                    {inv.totalQuantity} items
-                  </p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">{inv.totalQuantity} items</p>
                 </div>
               </div>
             ))

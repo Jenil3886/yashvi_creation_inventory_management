@@ -5,7 +5,7 @@ import BottomNav from '../components/BottomNav';
 import AppLockScreen from '../components/AppLockScreen';
 import useAuthStore from '../store/useAuthStore';
 import useOfflineStore from '../store/useOfflineStore';
-import appIconImg from '../assets/AppIcon.png';
+import appIconImg from '../assets/AppIcon2.png';
 
 export const AppLayout: React.FC = () => {
   const { user, token, appLocked, bootstrap, isInitialized } = useAuthStore();
@@ -67,14 +67,14 @@ export const AppLayout: React.FC = () => {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    
+
     // Show the browser's install dialog box
     deferredPrompt.prompt();
-    
+
     // Wait for the user's choice
     const { outcome } = await deferredPrompt.userChoice;
     console.log(`PWA Install Prompt outcome: ${outcome}`);
-    
+
     // Dismiss prompt reference since it's already spent
     setDeferredPrompt(null);
     setShowInstallBanner(false);
@@ -85,7 +85,9 @@ export const AppLayout: React.FC = () => {
       <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-darkBg">
         <div className="flex flex-col items-center gap-3">
           <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-xs text-slate-400 font-medium tracking-wide">Yashvi Creation Loading...</p>
+          <p className="text-xs text-slate-400 font-medium tracking-wide">
+            Yashvi Creation Loading...
+          </p>
         </div>
       </div>
     );
@@ -122,7 +124,7 @@ export const AppLayout: React.FC = () => {
               <img
                 src={appIconImg}
                 alt="Yashvi Creation App Icon"
-                className="w-10 h-10 rounded-xl object-cover bg-white p-0.5 border border-white/20 shadow-md"
+                className="w-10 h-10 rounded-xl object-cover"
               />
               <div>
                 <p className="text-xs font-black uppercase tracking-wider">Install App</p>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   FileSpreadsheet,
   Download,
@@ -8,13 +8,13 @@ import {
   PieChart,
   UserCheck,
   TrendingUp,
-} from "lucide-react";
-import { jsPDF } from "jspdf";
-import "jspdf-autotable";
-import * as XLSX from "xlsx";
-import useOfflineStore from "../store/useOfflineStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
+} from 'lucide-react';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
+import useOfflineStore from '../store/useOfflineStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
 
 interface ReportData {
   meta: {
@@ -35,16 +35,14 @@ interface ReportData {
 
 export const Reports: React.FC = () => {
   const { isOnline } = useOfflineStore();
-  const [range, setRange] = useState<"daily" | "weekly" | "monthly" | "yearly">(
-    "monthly",
-  );
+  const [range, setRange] = useState<'daily' | 'weekly' | 'monthly' | 'yearly'>('monthly');
   const [loading, setLoading] = useState(true);
   const [report, setReport] = useState<ReportData | null>(null);
 
   // Tab views inside reports
-  const [activeTab, setActiveTab] = useState<
-    "invoices" | "products" | "categories" | "suppliers"
-  >("invoices");
+  const [activeTab, setActiveTab] = useState<'invoices' | 'products' | 'categories' | 'suppliers'>(
+    'invoices',
+  );
 
   const loadReport = async () => {
     setLoading(true);
@@ -55,15 +53,12 @@ export const Reports: React.FC = () => {
         setReport(data);
 
         // Cache in IDB
-        await IDBHelper.put("settings", {
+        await IDBHelper.put('settings', {
           key: `cached_report_${range}`,
           value: JSON.stringify(data),
         });
       } catch (err) {
-        console.error(
-          "Failed fetching analytics report, loading cached data:",
-          err,
-        );
+        console.error('Failed fetching analytics report, loading cached data:', err);
         await loadFromLocal();
       } finally {
         setLoading(false);
@@ -76,18 +71,12 @@ export const Reports: React.FC = () => {
 
   const loadFromLocal = async () => {
     try {
-      const cachedReportRaw = await IDBHelper.get(
-        "settings",
-        `cached_report_${range}`,
-      );
+      const cachedReportRaw = await IDBHelper.get('settings', `cached_report_${range}`);
       if (cachedReportRaw) {
         setReport(JSON.parse(cachedReportRaw.value));
       } else {
         // Fallback: Calculate basics from cached purchase history
-        const cachedHistoryRaw = await IDBHelper.get(
-          "settings",
-          "cached_history",
-        );
+        const cachedHistoryRaw = await IDBHelper.get('settings', 'cached_history');
         if (cachedHistoryRaw) {
           const invoicesList = JSON.parse(cachedHistoryRaw.value);
           // Standard mock structure matching ReportData
@@ -98,14 +87,8 @@ export const Reports: React.FC = () => {
               rangeName: range,
             },
             totals: {
-              totalAmount: invoicesList.reduce(
-                (sum: number, i: any) => sum + i.totalAmount,
-                0,
-              ),
-              totalQuantity: invoicesList.reduce(
-                (sum: number, i: any) => sum + i.totalQuantity,
-                0,
-              ),
+              totalAmount: invoicesList.reduce((sum: number, i: any) => sum + i.totalAmount, 0),
+              totalQuantity: invoicesList.reduce((sum: number, i: any) => sum + i.totalQuantity, 0),
             },
             invoiceWiseSummary: invoicesList.map((i: any) => ({
               invoiceNumber: i.invoiceNumber,
@@ -148,51 +131,51 @@ export const Reports: React.FC = () => {
 
     // 1. Overall Summary Sheet
     const summaryData = [
-      { Metric: "Report Preset", Value: report.meta.rangeName.toUpperCase() },
+      { Metric: 'Report Preset', Value: report.meta.rangeName.toUpperCase() },
       {
-        Metric: "Start Date",
+        Metric: 'Start Date',
         Value: new Date(report.meta.startDate).toLocaleDateString(),
       },
       {
-        Metric: "End Date",
+        Metric: 'End Date',
         Value: new Date(report.meta.endDate).toLocaleDateString(),
       },
       {
-        Metric: "Total Expenditure",
+        Metric: 'Total Expenditure',
         Value: `INR ${report.totals.totalAmount}`,
       },
-      { Metric: "Total Items Purchased", Value: report.totals.totalQuantity },
+      { Metric: 'Total Items Purchased', Value: report.totals.totalQuantity },
     ];
     const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-    XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+    XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
 
     // 2. Invoice Wise Sheet
     if (report.invoiceWiseSummary.length > 0) {
       const wsInvoices = XLSX.utils.json_to_sheet(
         report.invoiceWiseSummary.map((inv) => ({
-          "Invoice Number": inv.invoiceNumber,
+          'Invoice Number': inv.invoiceNumber,
           Date: new Date(inv.purchaseDate).toLocaleDateString(),
           Supplier: inv.supplierName,
           Quantity: inv.totalQuantity,
-          "Total Amount (INR)": inv.totalAmount,
-          Remarks: inv.remarks || "",
+          'Total Amount (INR)': inv.totalAmount,
+          Remarks: inv.remarks || '',
         })),
       );
-      XLSX.utils.book_append_sheet(wb, wsInvoices, "Invoices");
+      XLSX.utils.book_append_sheet(wb, wsInvoices, 'Invoices');
     }
 
     // 3. Product Wise Sheet
     if (report.productWiseSummary.length > 0) {
       const wsProducts = XLSX.utils.json_to_sheet(
         report.productWiseSummary.map((p) => ({
-          "Product Name": p.productName,
+          'Product Name': p.productName,
           SKU: p.sku,
           Category: p.categoryName,
-          "Quantity Purchased": p.totalQuantity,
-          "Total Expense (INR)": p.totalAmount,
+          'Quantity Purchased': p.totalQuantity,
+          'Total Expense (INR)': p.totalAmount,
         })),
       );
-      XLSX.utils.book_append_sheet(wb, wsProducts, "Products");
+      XLSX.utils.book_append_sheet(wb, wsProducts, 'Products');
     }
 
     // Save Workbook
@@ -204,31 +187,24 @@ export const Reports: React.FC = () => {
     if (!report || report.invoiceWiseSummary.length === 0) return;
 
     // Build raw CSV string
-    const headers = [
-      "Invoice Number",
-      "Date",
-      "Supplier",
-      "Quantity",
-      "Amount (INR)",
-      "Remarks",
-    ];
+    const headers = ['Invoice Number', 'Date', 'Supplier', 'Quantity', 'Amount (INR)', 'Remarks'];
     const rows = report.invoiceWiseSummary.map((inv) => [
       inv.invoiceNumber,
       new Date(inv.purchaseDate).toLocaleDateString(),
       `"${inv.supplierName}"`,
       inv.totalQuantity,
       inv.totalAmount,
-      `"${inv.remarks || ""}"`,
+      `"${inv.remarks || ''}"`,
     ]);
 
     const csvContent =
-      "data:text/csv;charset=utf-8," +
-      [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+      'data:text/csv;charset=utf-8,' +
+      [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 
     const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `YC_Invoice_Report_${range}.csv`);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `YC_Invoice_Report_${range}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -242,7 +218,7 @@ export const Reports: React.FC = () => {
 
     // Title & Header details
     doc.setFontSize(18);
-    doc.text("Yashvi Creation - Purchase Report", 14, 15);
+    doc.text('Yashvi Creation - Purchase Report', 14, 15);
     doc.setFontSize(10);
     doc.text(`Timeframe: ${report.meta.rangeName.toUpperCase()}`, 14, 21);
     doc.text(
@@ -255,10 +231,10 @@ export const Reports: React.FC = () => {
 
     // Summary numbers box
     doc.setFillColor(240, 246, 255);
-    doc.rect(14, 32, 182, 18, "F");
-    doc.setFont("Helvetica", "bold");
+    doc.rect(14, 32, 182, 18, 'F');
+    doc.setFont('Helvetica', 'bold');
     doc.text(
-      `Total Spend: INR ${parseFloat(report.totals.totalAmount.toString()).toLocaleString("en-IN")}`,
+      `Total Spend: INR ${parseFloat(report.totals.totalAmount.toString()).toLocaleString('en-IN')}`,
       18,
       43,
     );
@@ -270,17 +246,15 @@ export const Reports: React.FC = () => {
       new Date(inv.purchaseDate).toLocaleDateString(),
       inv.supplierName,
       inv.totalQuantity,
-      `INR ${inv.totalAmount.toLocaleString("en-IN")}`,
+      `INR ${inv.totalAmount.toLocaleString('en-IN')}`,
     ]);
 
     // Render table using autotable plugin
     (doc as any).autoTable({
       startY: 56,
-      head: [
-        ["Invoice No", "Purchase Date", "Supplier", "Quantity", "Total Amount"],
-      ],
+      head: [['Invoice No', 'Purchase Date', 'Supplier', 'Quantity', 'Total Amount']],
       body: invoiceRows,
-      theme: "grid",
+      theme: 'grid',
       headStyles: { fillColor: [26, 110, 255] },
     });
 
@@ -303,14 +277,14 @@ export const Reports: React.FC = () => {
           Preset Window
         </span>
         <div className="flex gap-1.5">
-          {(["daily", "weekly", "monthly", "yearly"] as const).map((r) => (
+          {(['daily', 'weekly', 'monthly', 'yearly'] as const).map((r) => (
             <button
               key={r}
               onClick={() => setRange(r)}
               className={`px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase transition-all ${
                 range === r
-                  ? "bg-brand-500 text-white shadow-md"
-                  : "bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400"
+                  ? 'bg-brand-500 text-white shadow-md'
+                  : 'bg-slate-50 dark:bg-slate-800/40 text-slate-500 dark:text-slate-400'
               }`}
             >
               {r}
@@ -322,9 +296,7 @@ export const Reports: React.FC = () => {
       {!report ? (
         <div className="p-12 text-center text-slate-400 dark:text-slate-500">
           <FolderOpen size={48} className="mx-auto text-slate-300 mb-3" />
-          <p className="text-xs">
-            No purchase transactions logged in this range.
-          </p>
+          <p className="text-xs">No purchase transactions logged in this range.</p>
         </div>
       ) : (
         <>
@@ -335,10 +307,7 @@ export const Reports: React.FC = () => {
                 Aggregate Spend
               </span>
               <p className="text-lg font-black text-slate-800 dark:text-slate-100 mt-1">
-                ₹
-                {parseFloat(
-                  report.totals.totalAmount.toString(),
-                ).toLocaleString("en-IN")}
+                ₹{parseFloat(report.totals.totalAmount.toString()).toLocaleString('en-IN')}
               </p>
             </div>
             <div className="p-4 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl shadow-[0_2px_8px_rgba(0,0,0,0.01)] text-center">
@@ -385,16 +354,14 @@ export const Reports: React.FC = () => {
           <div className="space-y-3">
             {/* Nav Headers */}
             <div className="flex border-b border-slate-200 dark:border-darkBorder text-[11px] font-bold text-slate-400 dark:text-slate-500">
-              {(
-                ["invoices", "products", "categories", "suppliers"] as const
-              ).map((tab) => (
+              {(['invoices', 'products', 'categories', 'suppliers'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 pb-2 border-b-2 text-center uppercase tracking-wide transition-all ${
                     activeTab === tab
-                      ? "border-brand-500 text-brand-500 dark:text-brand-400 dark:border-brand-400"
-                      : "border-transparent hover:text-slate-600"
+                      ? 'border-brand-500 text-brand-500 dark:text-brand-400 dark:border-brand-400'
+                      : 'border-transparent hover:text-slate-600'
                   }`}
                 >
                   {tab}
@@ -404,28 +371,21 @@ export const Reports: React.FC = () => {
 
             {/* Tab contents */}
             <div className="bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl divide-y divide-slate-100 dark:divide-darkBorder overflow-hidden max-h-80 overflow-y-auto">
-              {activeTab === "invoices" &&
+              {activeTab === 'invoices' &&
                 (report.invoiceWiseSummary.length === 0 ? (
-                  <p className="p-6 text-center text-xs text-slate-400">
-                    Empty list
-                  </p>
+                  <p className="p-6 text-center text-xs text-slate-400">Empty list</p>
                 ) : (
                   report.invoiceWiseSummary.map((inv, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between p-3.5 text-xs"
-                    >
+                    <div key={idx} className="flex justify-between p-3.5 text-xs">
                       <div>
                         <p className="font-bold text-slate-800 dark:text-slate-200">
                           #{inv.invoiceNumber}
                         </p>
-                        <p className="text-[9px] text-slate-400 mt-0.5">
-                          {inv.supplierName}
-                        </p>
+                        <p className="text-[9px] text-slate-400 mt-0.5">{inv.supplierName}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-black text-slate-700 dark:text-slate-300">
-                          ₹{inv.totalAmount.toLocaleString("en-IN")}
+                          ₹{inv.totalAmount.toLocaleString('en-IN')}
                         </p>
                         <p className="text-[9px] text-slate-400 mt-0.5">
                           {inv.totalQuantity} items
@@ -435,20 +395,17 @@ export const Reports: React.FC = () => {
                   ))
                 ))}
 
-              {activeTab === "products" &&
+              {activeTab === 'products' &&
                 (report.productWiseSummary.length === 0 ? (
                   <p className="p-6 text-center text-xs text-slate-400">
                     No product detail records cached.
                   </p>
                 ) : (
                   report.productWiseSummary.map((p, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between p-3.5 text-xs"
-                    >
+                    <div key={idx} className="flex justify-between p-3.5 text-xs">
                       <div className="flex items-center gap-2">
                         <img
-                          src={p.imageUrl || "/assets/placeholder-product.png"}
+                          src={p.imageUrl || '/assets/placeholder-product.png'}
                           alt={p.productName}
                           className="w-8 h-8 rounded object-cover bg-slate-100"
                         />
@@ -456,68 +413,56 @@ export const Reports: React.FC = () => {
                           <p className="font-bold text-slate-800 dark:text-slate-200">
                             {p.productName}
                           </p>
-                          <p className="text-[9px] text-slate-400 font-mono">
-                            {p.sku}
-                          </p>
+                          <p className="text-[9px] text-slate-400 font-mono">{p.sku}</p>
                         </div>
                       </div>
                       <div className="text-right">
                         <p className="font-black text-slate-700 dark:text-slate-300">
-                          ₹{p.totalAmount.toLocaleString("en-IN")}
+                          ₹{p.totalAmount.toLocaleString('en-IN')}
                         </p>
-                        <p className="text-[9px] text-slate-400 mt-0.5">
-                          {p.totalQuantity} pcs
-                        </p>
+                        <p className="text-[9px] text-slate-400 mt-0.5">{p.totalQuantity} pcs</p>
                       </div>
                     </div>
                   ))
                 ))}
 
-              {activeTab === "categories" &&
+              {activeTab === 'categories' &&
                 (report.categoryWiseSummary.length === 0 ? (
                   <p className="p-6 text-center text-xs text-slate-400">
                     No category statistics found.
                   </p>
                 ) : (
                   report.categoryWiseSummary.map((cat, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between p-3.5 text-xs items-center"
-                    >
+                    <div key={idx} className="flex justify-between p-3.5 text-xs items-center">
                       <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                         <PieChart size={16} />
                         <span className="font-bold">{cat.categoryName}</span>
                       </div>
                       <div className="text-right">
                         <p className="font-black text-slate-700 dark:text-slate-300">
-                          ₹{cat.totalAmount.toLocaleString("en-IN")}
+                          ₹{cat.totalAmount.toLocaleString('en-IN')}
                         </p>
-                        <p className="text-[9px] text-slate-400 mt-0.5">
-                          {cat.totalQuantity} pcs
-                        </p>
+                        <p className="text-[9px] text-slate-400 mt-0.5">{cat.totalQuantity} pcs</p>
                       </div>
                     </div>
                   ))
                 ))}
 
-              {activeTab === "suppliers" &&
+              {activeTab === 'suppliers' &&
                 (report.supplierWiseSummary.length === 0 ? (
                   <p className="p-6 text-center text-xs text-slate-400">
                     No supplier statistics found.
                   </p>
                 ) : (
                   report.supplierWiseSummary.map((s, idx) => (
-                    <div
-                      key={idx}
-                      className="flex justify-between p-3.5 text-xs items-center"
-                    >
+                    <div key={idx} className="flex justify-between p-3.5 text-xs items-center">
                       <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                         <UserCheck size={16} />
                         <span className="font-bold">{s.supplierName}</span>
                       </div>
                       <div className="text-right">
                         <p className="font-black text-slate-700 dark:text-slate-300">
-                          ₹{s.totalAmount.toLocaleString("en-IN")}
+                          ₹{s.totalAmount.toLocaleString('en-IN')}
                         </p>
                         <p className="text-[9px] text-slate-400 mt-0.5">
                           {s.totalQuantity} pcs in {s.invoiceCount} inv

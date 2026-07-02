@@ -9,12 +9,7 @@ interface DrawerProps {
   children: React.ReactNode;
 }
 
-export const Drawer: React.FC<DrawerProps> = ({
-  isOpen,
-  onClose,
-  title,
-  children,
-}) => {
+export const Drawer: React.FC<DrawerProps> = ({ isOpen, onClose, title, children }) => {
   const drawerRef = useRef<HTMLDivElement>(null);
 
   // Close on ESC key
@@ -55,9 +50,7 @@ export const Drawer: React.FC<DrawerProps> = ({
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 pb-3 border-b border-slate-100 dark:border-darkBorder">
-          <h2 className="text-md font-bold text-slate-800 dark:text-slate-100">
-            {title}
-          </h2>
+          <h2 className="text-md font-bold text-slate-800 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
             className="p-1 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
@@ -67,12 +60,10 @@ export const Drawer: React.FC<DrawerProps> = ({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 select-none">
-          {children}
-        </div>
+        <div className="flex-1 overflow-y-auto p-4 select-none">{children}</div>
       </div>
     </div>,
-    document.body
+    document.body,
   );
 };
 

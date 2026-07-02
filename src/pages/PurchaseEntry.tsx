@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Save,
   AlertTriangle,
@@ -8,12 +8,12 @@ import {
   Calculator,
   ChevronDown,
   Search,
-} from "lucide-react";
-import useOfflineStore from "../store/useOfflineStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
+} from 'lucide-react';
+import useOfflineStore from '../store/useOfflineStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
 
-const defaultProductImg = "/pwa-192x192.png";
+const defaultProductImg = '/pwa-192x192.png';
 
 interface Product {
   id: string;
@@ -40,18 +40,16 @@ export const PurchaseEntry: React.FC = () => {
   // Master Data
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
 
   // 3-Field Form States
-  const [selectedProductId, setSelectedProductId] = useState("");
-  const [quantity, setQuantity] = useState("1");
-  const [purchaseDate, setPurchaseDate] = useState(
-    new Date().toISOString().split("T")[0],
-  );
+  const [selectedProductId, setSelectedProductId] = useState('');
+  const [quantity, setQuantity] = useState('1');
+  const [purchaseDate, setPurchaseDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Custom searchable dropdown states
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [productSearch, setProductSearch] = useState("");
+  const [productSearch, setProductSearch] = useState('');
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -59,14 +57,12 @@ export const PurchaseEntry: React.FC = () => {
   // Load master data
   const loadMasterData = async () => {
     try {
-      const cachedProducts = await IDBHelper.getAll<Product>("products");
-      const cachedSuppliers = await IDBHelper.getAll<Supplier>("suppliers");
+      const cachedProducts = await IDBHelper.getAll<Product>('products');
+      const cachedSuppliers = await IDBHelper.getAll<Supplier>('suppliers');
 
       setProducts(cachedProducts.filter((p) => p.active));
 
-      const activeSuppliers = cachedSuppliers.filter(
-        (s) => s.status === "ACTIVE",
-      );
+      const activeSuppliers = cachedSuppliers.filter((s) => s.status === 'ACTIVE');
       setSuppliers(activeSuppliers);
 
       // Auto select first supplier
@@ -74,7 +70,7 @@ export const PurchaseEntry: React.FC = () => {
         setSelectedSupplierId(activeSuppliers[0].id);
       }
     } catch (e) {
-      console.error("Failed loading autocomplete data:", e);
+      console.error('Failed loading autocomplete data:', e);
     }
   };
 
@@ -92,8 +88,7 @@ export const PurchaseEntry: React.FC = () => {
   // Calculate quick price summary on selection
   const selectedProduct = products.find((p) => p.id === selectedProductId);
   const calculatedTotal = selectedProduct
-    ? (parseFloat(selectedProduct.purchasePrice.toString()) || 0) *
-      (parseInt(quantity) || 0)
+    ? (parseFloat(selectedProduct.purchasePrice.toString()) || 0) * (parseInt(quantity) || 0)
     : 0;
 
   // Save submit handler
@@ -101,18 +96,16 @@ export const PurchaseEntry: React.FC = () => {
     e.preventDefault();
 
     if (!selectedProductId) {
-      setErrorMsg("Please select a product.");
+      setErrorMsg('Please select a product.');
       return;
     }
     const qtyNum = parseInt(quantity);
     if (!qtyNum || qtyNum <= 0) {
-      setErrorMsg("Please enter a valid quantity greater than 0.");
+      setErrorMsg('Please enter a valid quantity greater than 0.');
       return;
     }
     if (!selectedSupplierId) {
-      setErrorMsg(
-        "No active supplier found. Please create a supplier in settings first.",
-      );
+      setErrorMsg('No active supplier found. Please create a supplier in settings first.');
       return;
     }
 
@@ -144,29 +137,24 @@ export const PurchaseEntry: React.FC = () => {
     if (isOnline) {
       try {
         // Submit immediately online
-        await apiClient.post("/purchases", invoicePayload);
-        navigate("/"); // redirect to home
+        await apiClient.post('/purchases', invoicePayload);
+        navigate('/'); // redirect to home
       } catch (err: any) {
-        console.error("Invoice submit error:", err);
-        setErrorMsg(
-          err.response?.data?.message ||
-            "Error occurred while saving purchase.",
-        );
+        console.error('Invoice submit error:', err);
+        setErrorMsg(err.response?.data?.message || 'Error occurred while saving purchase.');
         setSubmitting(false);
       }
     } else {
       // Offline enqueue
       try {
-        const selectedSupplier = suppliers.find(
-          (s) => s.id === selectedSupplierId,
-        );
+        const selectedSupplier = suppliers.find((s) => s.id === selectedSupplierId);
 
         const offlinePayload = {
           id: `offline_${timestamp}`,
           invoiceNumber,
           purchaseDate: formattedDate,
           supplierId: selectedSupplierId,
-          supplierName: selectedSupplier?.name || "Local Supplier",
+          supplierName: selectedSupplier?.name || 'Local Supplier',
           items: [
             {
               productId: selectedProductId,
@@ -185,10 +173,10 @@ export const PurchaseEntry: React.FC = () => {
 
         // Queue in IndexedDB and adjust local stock counts immediately!
         await enqueuePurchase(offlinePayload);
-        navigate("/"); // redirect back home
+        navigate('/'); // redirect back home
       } catch (err: any) {
-        console.error("Offline save error:", err);
-        setErrorMsg("Could not save offline purchase queue.");
+        console.error('Offline save error:', err);
+        setErrorMsg('Could not save offline purchase queue.');
         setSubmitting(false);
       }
     }
@@ -201,8 +189,7 @@ export const PurchaseEntry: React.FC = () => {
         <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300 rounded-xl text-xs font-semibold animate-pulse">
           <AlertTriangle size={15} />
           <span>
-            Offline Mode. Purchase will be enqueued locally and stock updated
-            immediately.
+            Offline Mode. Purchase will be enqueued locally and stock updated immediately.
           </span>
         </div>
       )}
@@ -236,7 +223,7 @@ export const PurchaseEntry: React.FC = () => {
                 <span>
                   {selectedProduct
                     ? `${selectedProduct.name} (${selectedProduct.sku}) — ₹${selectedProduct.purchasePrice}`
-                    : "Select Product"}
+                    : 'Select Product'}
                 </span>
                 <ChevronDown size={14} className="text-slate-400" />
               </button>
@@ -277,7 +264,7 @@ export const PurchaseEntry: React.FC = () => {
                           onClick={() => {
                             setSelectedProductId(p.id);
                             setIsDropdownOpen(false);
-                            setProductSearch("");
+                            setProductSearch('');
                           }}
                           className="p-3 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/40 flex justify-between items-center transition-colors"
                         >
@@ -287,8 +274,7 @@ export const PurchaseEntry: React.FC = () => {
                               alt={p.name}
                               className="w-8 h-8 object-cover bg-slate-100 dark:bg-slate-800 rounded-lg"
                               onError={(e) => {
-                                (e.target as HTMLImageElement).src =
-                                  defaultProductImg;
+                                (e.target as HTMLImageElement).src = defaultProductImg;
                               }}
                             />
                             <div>
@@ -301,10 +287,7 @@ export const PurchaseEntry: React.FC = () => {
                             </div>
                           </div>
                           <span className="font-black text-brand-500 dark:text-brand-400">
-                            ₹
-                            {parseFloat(
-                              p.purchasePrice.toString(),
-                            ).toLocaleString("en-IN")}
+                            ₹{parseFloat(p.purchasePrice.toString()).toLocaleString('en-IN')}
                           </span>
                         </div>
                       ))
@@ -354,7 +337,7 @@ export const PurchaseEntry: React.FC = () => {
                 <span>Total Expenditure:</span>
               </div>
               <span className="font-black text-brand-500 dark:text-brand-400 text-sm">
-                ₹{calculatedTotal.toLocaleString("en-IN")}
+                ₹{calculatedTotal.toLocaleString('en-IN')}
               </span>
             </div>
           )}
@@ -366,7 +349,7 @@ export const PurchaseEntry: React.FC = () => {
             className="w-full flex items-center justify-center gap-2 py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md transition-all text-xs uppercase tracking-wider"
           >
             <Save size={16} />
-            <span>{submitting ? "Saving..." : "Save Purchase"}</span>
+            <span>{submitting ? 'Saving...' : 'Save Purchase'}</span>
           </button>
         </form>
       </div>

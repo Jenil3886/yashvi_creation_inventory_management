@@ -1,6 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Plus, Trash2, ArrowLeft, Wifi, WifiOff, RefreshCw, Landmark, ShoppingBag, Truck, FileText, IndianRupee } from 'lucide-react';
+import {
+  Plus,
+  Trash2,
+  ArrowLeft,
+  Wifi,
+  WifiOff,
+  RefreshCw,
+  Landmark,
+  ShoppingBag,
+  Truck,
+  FileText,
+  IndianRupee,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import apiClient from '../services/apiClient';
 import { IDBHelper } from '../utils/idbHelper';
@@ -16,21 +28,52 @@ interface ExpenseFormInput {
 }
 
 const CATEGORIES = [
-  { id: 'CA/Legal', name: 'CA / Legal', icon: Landmark, color: 'text-amber-400 bg-amber-400/10 border-amber-400/20' },
-  { id: 'Packaging', name: 'Packaging Materials', icon: ShoppingBag, color: 'text-purple-400 bg-purple-400/10 border-purple-400/20' },
-  { id: 'Logistics/Transport', name: 'Logistics / Transport', icon: Truck, color: 'text-blue-400 bg-blue-400/10 border-blue-400/20' },
-  { id: 'Office Supplies', name: 'Office Supplies', icon: FileText, color: 'text-teal-400 bg-teal-400/10 border-teal-400/20' },
-  { id: 'Others', name: 'Others', icon: IndianRupee, color: 'text-slate-400 bg-slate-400/10 border-slate-400/20' },
+  {
+    id: 'CA/Legal',
+    name: 'CA / Legal',
+    icon: Landmark,
+    color: 'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  },
+  {
+    id: 'Packaging',
+    name: 'Packaging Materials',
+    icon: ShoppingBag,
+    color: 'text-purple-400 bg-purple-400/10 border-purple-400/20',
+  },
+  {
+    id: 'Logistics/Transport',
+    name: 'Logistics / Transport',
+    icon: Truck,
+    color: 'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  },
+  {
+    id: 'Office Supplies',
+    name: 'Office Supplies',
+    icon: FileText,
+    color: 'text-teal-400 bg-teal-400/10 border-teal-400/20',
+  },
+  {
+    id: 'Others',
+    name: 'Others',
+    icon: IndianRupee,
+    color: 'text-slate-400 bg-slate-400/10 border-slate-400/20',
+  },
 ];
 
 export const Expenses: React.FC = () => {
-  const { isOnline, offlineExpenses, enqueueExpense, syncExpenses, loadExpensesQueue } = useOfflineStore();
+  const { isOnline, offlineExpenses, enqueueExpense, syncExpenses, loadExpensesQueue } =
+    useOfflineStore();
   const [expenses, setExpenses] = useState<OfflineExpense[]>([]);
   const [loading, setLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<ExpenseFormInput>();
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ExpenseFormInput>();
 
   // Fetch / load cached data
   const loadData = async () => {
@@ -39,17 +82,21 @@ export const Expenses: React.FC = () => {
     try {
       // 1. Fetch instantly from IndexedDB cache
       const cached = await IDBHelper.getAll<OfflineExpense>('expenses');
-      setExpenses(cached.sort((a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()));
+      setExpenses(
+        cached.sort(
+          (a, b) => new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime(),
+        ),
+      );
 
       // 2. Fetch from backend if online
       if (isOnline) {
         const response = await apiClient.get('/expenses');
         const freshExpenses: OfflineExpense[] = response.data.data;
-        
+
         // Update IndexedDB cache
         await IDBHelper.clear('expenses');
         await IDBHelper.putAll('expenses', freshExpenses);
-        
+
         // Update state
         setExpenses(freshExpenses);
       }
@@ -130,7 +177,7 @@ export const Expenses: React.FC = () => {
         setError('Cannot delete online records while offline.');
         return;
       }
-      
+
       setExpenses((prev) => prev.filter((e) => e.id !== id));
     } catch (err: any) {
       console.error('Failed to delete expense:', err);
@@ -140,10 +187,10 @@ export const Expenses: React.FC = () => {
 
   // Helper calculations
   const totalAmount = expenses.reduce((acc, curr) => acc + Number(curr.amount), 0);
-  
-  const categoryBreakdown = CATEGORIES.map(cat => {
+
+  const categoryBreakdown = CATEGORIES.map((cat) => {
     const sum = expenses
-      .filter(e => e.category === cat.id)
+      .filter((e) => e.category === cat.id)
       .reduce((acc, curr) => acc + Number(curr.amount), 0);
     return { ...cat, total: sum };
   });
@@ -180,7 +227,6 @@ export const Expenses: React.FC = () => {
 
       {/* Main Content container */}
       <div className="max-w-md mx-auto px-4 mt-6 space-y-6">
-        
         {/* Error Notification */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-sm text-red-400 text-center">
@@ -191,12 +237,18 @@ export const Expenses: React.FC = () => {
         {/* Main Stats Card */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0c1424] to-[#0a101b] border border-brand-900/30 p-6 shadow-[0_0_20px_rgba(0,50,41,0.15)]">
           <div className="relative z-10 space-y-2">
-            <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Total Expenses logged</p>
+            <p className="text-sm text-gray-400 uppercase tracking-wider font-semibold">
+              Total Expenses logged
+            </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-extrabold tracking-tight text-white">₹{totalAmount.toLocaleString('en-IN')}</span>
+              <span className="text-3xl font-extrabold tracking-tight text-white">
+                ₹{totalAmount.toLocaleString('en-IN')}
+              </span>
               <span className="text-xs text-emerald-400 font-medium">This month</span>
             </div>
-            <p className="text-xs text-gray-500 font-medium">{expenses.length} transaction entries</p>
+            <p className="text-xs text-gray-500 font-medium">
+              {expenses.length} transaction entries
+            </p>
           </div>
           {/* Accent Glow */}
           <div className="absolute right-0 bottom-0 w-32 h-32 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none" />
@@ -212,19 +264,26 @@ export const Expenses: React.FC = () => {
 
         {/* Category Breakdown list */}
         <div className="space-y-3">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Category Breakdown</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+            Category Breakdown
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {categoryBreakdown.map((cat) => {
               const Icon = cat.icon;
               return (
-                <div key={cat.id} className="bg-[#0c1424] border border-brand-900/10 rounded-xl p-3 flex flex-col justify-between">
+                <div
+                  key={cat.id}
+                  className="bg-[#0c1424] border border-brand-900/10 rounded-xl p-3 flex flex-col justify-between"
+                >
                   <div className="flex items-center gap-2">
                     <div className={`p-1.5 rounded-lg border ${cat.color}`}>
                       <Icon className="w-4 h-4" />
                     </div>
                     <span className="text-xs font-semibold text-gray-300 truncate">{cat.name}</span>
                   </div>
-                  <span className="text-sm font-bold text-white mt-2">₹{cat.total.toLocaleString('en-IN')}</span>
+                  <span className="text-sm font-bold text-white mt-2">
+                    ₹{cat.total.toLocaleString('en-IN')}
+                  </span>
                 </div>
               );
             })}
@@ -234,7 +293,9 @@ export const Expenses: React.FC = () => {
         {/* Expenses List */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">Expense Logs</h2>
+            <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-400">
+              Expense Logs
+            </h2>
             {loading && <RefreshCw className="w-4 h-4 text-emerald-400 animate-spin" />}
           </div>
 
@@ -246,8 +307,8 @@ export const Expenses: React.FC = () => {
               </div>
             ) : (
               expenses.map((expense) => {
-                const isOffline = offlineExpenses.some(o => o.id === expense.id);
-                const categoryConfig = CATEGORIES.find(c => c.id === expense.category);
+                const isOffline = offlineExpenses.some((o) => o.id === expense.id);
+                const categoryConfig = CATEGORIES.find((c) => c.id === expense.category);
                 const IconComponent = categoryConfig?.icon || IndianRupee;
 
                 return (
@@ -256,13 +317,17 @@ export const Expenses: React.FC = () => {
                     className="flex items-center justify-between p-4 bg-[#0c1424] border border-brand-900/10 hover:border-brand-900/40 rounded-xl transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div className={`p-2.5 rounded-xl border ${categoryConfig?.color || 'text-slate-400 border-slate-400/20 bg-slate-400/10'}`}>
+                      <div
+                        className={`p-2.5 rounded-xl border ${categoryConfig?.color || 'text-slate-400 border-slate-400/20 bg-slate-400/10'}`}
+                      >
                         <IconComponent className="w-5 h-5" />
                       </div>
                       <div>
                         <h3 className="text-sm font-bold text-gray-200">{expense.title}</h3>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-xs text-gray-400 font-semibold">{expense.expenseDate}</span>
+                          <span className="text-xs text-gray-400 font-semibold">
+                            {expense.expenseDate}
+                          </span>
                           {isOffline && (
                             <span className="flex items-center gap-0.5 text-[10px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.2 rounded-full font-bold">
                               Queued
@@ -270,13 +335,17 @@ export const Expenses: React.FC = () => {
                           )}
                         </div>
                         {expense.remarks && (
-                          <p className="text-xs text-gray-500 italic mt-1 truncate max-w-[200px]">"{expense.remarks}"</p>
+                          <p className="text-xs text-gray-500 italic mt-1 truncate max-w-[200px]">
+                            "{expense.remarks}"
+                          </p>
                         )}
                       </div>
                     </div>
 
                     <div className="flex items-center gap-3">
-                      <span className="text-base font-extrabold text-white">₹{Number(expense.amount).toLocaleString('en-IN')}</span>
+                      <span className="text-base font-extrabold text-white">
+                        ₹{Number(expense.amount).toLocaleString('en-IN')}
+                      </span>
                       <button
                         onClick={() => handleDelete(expense.id, isOffline)}
                         className="p-2 text-gray-500 hover:text-red-500 rounded-lg hover:bg-red-500/10 transition-colors"
@@ -297,11 +366,14 @@ export const Expenses: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm">
           {/* Clickaway backdrop */}
           <div className="absolute inset-0" onClick={() => setShowAddForm(false)} />
-          
+
           <div className="relative w-full max-w-md bg-[#0a101b] border-t border-brand-900/40 rounded-t-3xl p-6 space-y-4 shadow-2xl animate-slide-up">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-extrabold text-white">Add Expense</h2>
-              <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-white text-sm">
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="text-gray-400 hover:text-white text-sm"
+              >
                 Cancel
               </button>
             </div>
@@ -327,7 +399,10 @@ export const Expenses: React.FC = () => {
                   step="0.01"
                   placeholder="0.00"
                   className="w-full bg-[#0c1424] border border-brand-900/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500"
-                  {...register('amount', { required: 'Amount is required', min: { value: 0.01, message: 'Must be greater than 0' } })}
+                  {...register('amount', {
+                    required: 'Amount is required',
+                    min: { value: 0.01, message: 'Must be greater than 0' },
+                  })}
                 />
                 {errors.amount && <p className="text-xs text-red-400">{errors.amount.message}</p>}
               </div>
@@ -346,7 +421,9 @@ export const Expenses: React.FC = () => {
                     </option>
                   ))}
                 </select>
-                {errors.category && <p className="text-xs text-red-400">{errors.category.message}</p>}
+                {errors.category && (
+                  <p className="text-xs text-red-400">{errors.category.message}</p>
+                )}
               </div>
 
               {/* Expense Date */}

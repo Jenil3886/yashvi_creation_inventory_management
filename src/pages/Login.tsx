@@ -1,18 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  ShieldCheck,
-  Fingerprint,
-  PlusCircle,
-  Link2,
-  ArrowLeft,
-} from "lucide-react";
-import {
-  startRegistration,
-  startAuthentication,
-} from "@simplewebauthn/browser";
-import useAuthStore from "../store/useAuthStore";
-import apiClient from "../services/apiClient";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, Fingerprint, PlusCircle, Link2, ArrowLeft } from 'lucide-react';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
+import useAuthStore from '../store/useAuthStore';
+import apiClient from '../services/apiClient';
 
 export const Login: React.FC = () => {
   const { token, userId, setAuth, setRegisteredUserId } = useAuthStore();
@@ -22,12 +13,12 @@ export const Login: React.FC = () => {
 
   // Device Linking states
   const [showLinkingForm, setShowLinkingForm] = useState(false);
-  const [linkCodeInput, setLinkCodeInput] = useState("");
+  const [linkCodeInput, setLinkCodeInput] = useState('');
 
   useEffect(() => {
     // If already authenticated, redirect to Dashboard
     if (token) {
-      navigate("/");
+      navigate('/');
     }
   }, [token, navigate]);
 
@@ -36,31 +27,31 @@ export const Login: React.FC = () => {
     setError(null);
     try {
       // 1. Fetch options from server
-      const resOptions = await apiClient.post("/auth/register-options");
+      const resOptions = await apiClient.post('/auth/register-options');
       const { options, stateToken } = resOptions.data.data;
 
       // 2. Start biometric registration using browser authenticator
       const regResponse = await startRegistration(options);
 
       // 3. Verify response on backend
-      const resVerify = await apiClient.post("/auth/register-verify", {
+      const resVerify = await apiClient.post('/auth/register-verify', {
         credentialResponse: regResponse,
         stateToken,
       });
 
-      if (resVerify.data.status === "success") {
+      if (resVerify.data.status === 'success') {
         const { token, user } = resVerify.data.data;
         setAuth(token, user);
-        navigate("/");
+        navigate('/');
       } else {
-        setError("Device registration failed. Please try again.");
+        setError('Device registration failed. Please try again.');
       }
     } catch (err: any) {
-      console.error("Registration error:", err);
+      console.error('Registration error:', err);
       setError(
         err.response?.data?.message ||
           err.message ||
-          "Biometric registration cancelled or not supported.",
+          'Biometric registration cancelled or not supported.',
       );
     } finally {
       setLoading(false);
@@ -73,7 +64,7 @@ export const Login: React.FC = () => {
     setError(null);
     try {
       // 1. Fetch login options
-      const resOptions = await apiClient.post("/auth/login-options", {
+      const resOptions = await apiClient.post('/auth/login-options', {
         userId,
       });
       const { options, stateToken } = resOptions.data.data;
@@ -82,24 +73,22 @@ export const Login: React.FC = () => {
       const authResponse = await startAuthentication(options);
 
       // 3. Verify assertion on backend
-      const resVerify = await apiClient.post("/auth/login-verify", {
+      const resVerify = await apiClient.post('/auth/login-verify', {
         credentialResponse: authResponse,
         stateToken,
       });
 
-      if (resVerify.data.status === "success") {
+      if (resVerify.data.status === 'success') {
         const { token, user } = resVerify.data.data;
         setAuth(token, user);
-        navigate("/");
+        navigate('/');
       } else {
-        setError("Verification failed. Try again.");
+        setError('Verification failed. Try again.');
       }
     } catch (err: any) {
-      console.error("Authentication error:", err);
+      console.error('Authentication error:', err);
       setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Biometric unlock cancelled or failed.",
+        err.response?.data?.message || err.message || 'Biometric unlock cancelled or failed.',
       );
     } finally {
       setLoading(false);
@@ -110,7 +99,7 @@ export const Login: React.FC = () => {
   const handleLinkSecondaryDevice = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!linkCodeInput.trim() || linkCodeInput.trim().length !== 6) {
-      setError("Please enter a valid 6-digit code.");
+      setError('Please enter a valid 6-digit code.');
       return;
     }
 
@@ -119,7 +108,7 @@ export const Login: React.FC = () => {
 
     try {
       // 1. Verify link code on backend and retrieve registration options
-      const resLink = await apiClient.post("/auth/link-verify", {
+      const resLink = await apiClient.post('/auth/link-verify', {
         code: linkCodeInput.trim(),
       });
 
@@ -129,24 +118,22 @@ export const Login: React.FC = () => {
       const regResponse = await startRegistration(options);
 
       // 3. Post back registration assertion
-      const resVerify = await apiClient.post("/auth/register-verify", {
+      const resVerify = await apiClient.post('/auth/register-verify', {
         credentialResponse: regResponse,
         stateToken,
       });
 
-      if (resVerify.data.status === "success") {
+      if (resVerify.data.status === 'success') {
         const { token, user } = resVerify.data.data;
         setAuth(token, user);
-        navigate("/");
+        navigate('/');
       } else {
-        setError("Device linking failed.");
+        setError('Device linking failed.');
       }
     } catch (err: any) {
-      console.error("Linking error:", err);
+      console.error('Linking error:', err);
       setError(
-        err.response?.data?.message ||
-          err.message ||
-          "Device pairing was cancelled or failed.",
+        err.response?.data?.message || err.message || 'Device pairing was cancelled or failed.',
       );
     } finally {
       setLoading(false);
@@ -188,8 +175,7 @@ export const Login: React.FC = () => {
               </h2>
             </div>
             <p className="text-[11px] text-slate-400 mb-5">
-              Enter the 6-digit code generated under settings on your primary
-              device.
+              Enter the 6-digit code generated under settings on your primary device.
             </p>
 
             <form onSubmit={handleLinkSecondaryDevice} className="space-y-4">
@@ -198,9 +184,7 @@ export const Login: React.FC = () => {
                 required
                 maxLength={6}
                 value={linkCodeInput}
-                onChange={(e) =>
-                  setLinkCodeInput(e.target.value.replace(/\D/g, ""))
-                }
+                onChange={(e) => setLinkCodeInput(e.target.value.replace(/\D/g, ''))}
                 placeholder="000 000"
                 className="w-full tracking-[1em] text-center font-bold px-3 py-3 border border-slate-200 dark:border-darkBorder bg-slate-50 dark:bg-darkBg rounded-xl text-lg focus:outline-none dark:text-slate-100"
               />
@@ -211,19 +195,16 @@ export const Login: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-brand-500 hover:bg-brand-600 text-white font-bold rounded-xl shadow-md transition-all active:scale-[0.98] text-xs uppercase"
               >
                 <Fingerprint size={16} />
-                <span>{loading ? "Verifying Code..." : "Bind Biometrics"}</span>
+                <span>{loading ? 'Verifying Code...' : 'Bind Biometrics'}</span>
               </button>
             </form>
           </div>
         ) : userId ? (
           // Welcome back state
           <div className="w-full max-w-sm p-6 bg-white dark:bg-darkCard rounded-2xl shadow-xl border border-slate-100 dark:border-darkBorder text-center animate-slide-up">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-              Welcome Back
-            </h2>
+            <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">Welcome Back</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 mb-6 font-medium">
-              Unlock the application using your device fingerprint, face, or
-              PIN.
+              Unlock the application using your device fingerprint, face, or PIN.
             </p>
 
             <button
@@ -232,7 +213,7 @@ export const Login: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md transition-all"
             >
               <Fingerprint size={20} />
-              <span>{loading ? "Verifying..." : "Unlock App"}</span>
+              <span>{loading ? 'Verifying...' : 'Unlock App'}</span>
             </button>
 
             {/* Linking option trigger */}
@@ -254,8 +235,7 @@ export const Login: React.FC = () => {
               Register Device
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1.5 mb-6 font-medium">
-              No passwords, emails, or usernames. Initialize this device
-              securely using biometrics.
+              No passwords, emails, or usernames. Initialize this device securely using biometrics.
             </p>
 
             <button
@@ -264,9 +244,7 @@ export const Login: React.FC = () => {
               className="w-full flex items-center justify-center gap-2 py-3 bg-brand-500 hover:bg-brand-600 active:scale-[0.98] text-white font-bold rounded-xl shadow-md transition-all"
             >
               <PlusCircle size={20} />
-              <span>
-                {loading ? "Initializing..." : "Register This Device"}
-              </span>
+              <span>{loading ? 'Initializing...' : 'Register This Device'}</span>
             </button>
 
             {/* Linking option trigger */}
@@ -293,8 +271,8 @@ export const Login: React.FC = () => {
 
       {/* Footer policy */}
       <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 max-w-xs mx-auto">
-        Protected by WebAuthn authentication protocols. Biometrics are processed
-        on-device and never shared.
+        Protected by WebAuthn authentication protocols. Biometrics are processed on-device and never
+        shared.
       </div>
     </div>
   );

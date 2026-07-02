@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Search,
   Calendar,
@@ -8,13 +8,13 @@ import {
   AlertTriangle,
   FolderOpen,
   FileText,
-} from "lucide-react";
-import useOfflineStore from "../store/useOfflineStore";
-import apiClient from "../services/apiClient";
-import { IDBHelper } from "../utils/idbHelper";
-import Drawer from "../components/Drawer";
+} from 'lucide-react';
+import useOfflineStore from '../store/useOfflineStore';
+import apiClient from '../services/apiClient';
+import { IDBHelper } from '../utils/idbHelper';
+import Drawer from '../components/Drawer';
 
-const defaultProductImg = "/pwa-192x192.png";
+const defaultProductImg = '/pwa-192x192.png';
 
 interface PurchaseInvoice {
   id: string;
@@ -51,24 +51,21 @@ export const PurchaseHistory: React.FC = () => {
   // Invoices & Autocomplete master data
   const [invoices, setInvoices] = useState<PurchaseInvoice[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [filteredInvoices, setFilteredInvoices] = useState<PurchaseInvoice[]>(
-    [],
-  );
+  const [filteredInvoices, setFilteredInvoices] = useState<PurchaseInvoice[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Query lock ref to prevent duplicate/concurrent API requests
   const fetchingRef = useRef(false);
 
   // Filters
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedSupplierId, setSelectedSupplierId] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSupplierId, setSelectedSupplierId] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [showFiltersDrawer, setShowFiltersDrawer] = useState(false);
 
   // Detail view state
-  const [selectedInvoice, setSelectedInvoice] =
-    useState<PurchaseInvoice | null>(null);
+  const [selectedInvoice, setSelectedInvoice] = useState<PurchaseInvoice | null>(null);
   const [isDetailDrawerOpen, setIsDetailDrawerOpen] = useState(false);
 
   const [undoing, setUndoing] = useState(false);
@@ -80,8 +77,8 @@ export const PurchaseHistory: React.FC = () => {
     setErrorMsg(null);
 
     // 1. Immediately load and render transaction history from local cache
-    const cachedHistoryRaw = await IDBHelper.get("settings", "cached_history");
-    const cachedSuppliers = await IDBHelper.getAll<Supplier>("suppliers");
+    const cachedHistoryRaw = await IDBHelper.get('settings', 'cached_history');
+    const cachedSuppliers = await IDBHelper.getAll<Supplier>('suppliers');
 
     if (cachedSuppliers.length > 0 || cachedHistoryRaw) {
       setSuppliers(cachedSuppliers);
@@ -89,7 +86,7 @@ export const PurchaseHistory: React.FC = () => {
         try {
           setInvoices(JSON.parse(cachedHistoryRaw.value));
         } catch (e) {
-          console.error("Error parsing history cache:", e);
+          console.error('Error parsing history cache:', e);
         }
       }
       setLoading(false); // Stop loading spinner immediately
@@ -100,23 +97,20 @@ export const PurchaseHistory: React.FC = () => {
     // 2. Fetch fresh invoices from API in background if online
     if (isOnline) {
       try {
-        const invRes = await apiClient.get("/purchases");
-        const supRes = await apiClient.get("/suppliers");
+        const invRes = await apiClient.get('/purchases');
+        const supRes = await apiClient.get('/suppliers');
 
         setInvoices(invRes.data.data);
         setSuppliers(supRes.data.data);
 
         // Cache invoices locally for offline viewing
-        await IDBHelper.put("settings", {
-          key: "cached_history",
+        await IDBHelper.put('settings', {
+          key: 'cached_history',
           value: JSON.stringify(invRes.data.data),
         });
-        await IDBHelper.putAll("suppliers", supRes.data.data);
+        await IDBHelper.putAll('suppliers', supRes.data.data);
       } catch (err) {
-        console.error(
-          "Failed fetching history online, using local cache:",
-          err,
-        );
+        console.error('Failed fetching history online, using local cache:', err);
       } finally {
         setLoading(false);
         fetchingRef.current = false;
@@ -130,11 +124,8 @@ export const PurchaseHistory: React.FC = () => {
 
   const loadFromLocal = async () => {
     try {
-      const cachedHistoryRaw = await IDBHelper.get(
-        "settings",
-        "cached_history",
-      );
-      const cachedSuppliers = await IDBHelper.getAll<Supplier>("suppliers");
+      const cachedHistoryRaw = await IDBHelper.get('settings', 'cached_history');
+      const cachedSuppliers = await IDBHelper.getAll<Supplier>('suppliers');
 
       setSuppliers(cachedSuppliers);
 
@@ -157,7 +148,7 @@ export const PurchaseHistory: React.FC = () => {
     let result = [...invoices];
 
     // Search query: Invoice Number or Product Name
-    if (searchQuery.trim() !== "") {
+    if (searchQuery.trim() !== '') {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(
         (inv) =>
@@ -201,14 +192,12 @@ export const PurchaseHistory: React.FC = () => {
   // Perform invoice undo rollback
   const handleUndoInvoice = async (invoiceId: string) => {
     if (!isOnline) {
-      alert(
-        "You must be online to undo purchases and sync stock rollbacks with the server.",
-      );
+      alert('You must be online to undo purchases and sync stock rollbacks with the server.');
       return;
     }
 
     const confirmUndo = window.confirm(
-      "Are you sure you want to UNDO this purchase? This will delete the invoice record and decrement current product stock levels.",
+      'Are you sure you want to UNDO this purchase? This will delete the invoice record and decrement current product stock levels.',
     );
     if (!confirmUndo) return;
 
@@ -220,7 +209,7 @@ export const PurchaseHistory: React.FC = () => {
       await loadData(); // Reload list
     } catch (err: any) {
       console.error(err);
-      alert(err.response?.data?.message || "Failed to undo invoice.");
+      alert(err.response?.data?.message || 'Failed to undo invoice.');
     } finally {
       setUndoing(false);
     }
@@ -248,8 +237,8 @@ export const PurchaseHistory: React.FC = () => {
           onClick={() => setShowFiltersDrawer(true)}
           className={`p-3 rounded-2xl border transition-all active:scale-95 ${
             selectedSupplierId || startDate || endDate
-              ? "bg-brand-500 border-brand-500 text-white shadow-lg"
-              : "bg-white dark:bg-darkCard border-slate-200 dark:border-darkBorder text-slate-500 dark:text-slate-400"
+              ? 'bg-brand-500 border-brand-500 text-white shadow-lg'
+              : 'bg-white dark:bg-darkCard border-slate-200 dark:border-darkBorder text-slate-500 dark:text-slate-400'
           }`}
           title="History Filters"
         >
@@ -260,8 +249,7 @@ export const PurchaseHistory: React.FC = () => {
       {/* Offline Status */}
       {!isOnline && (
         <div className="p-3 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/30 text-amber-800 dark:text-amber-300 rounded-2xl text-xs font-semibold">
-          Offline Mode. History is loaded from cached snapshots. Undo action is
-          disabled.
+          Offline Mode. History is loaded from cached snapshots. Undo action is disabled.
         </div>
       )}
 
@@ -270,11 +258,9 @@ export const PurchaseHistory: React.FC = () => {
         <div className="flex flex-wrap gap-2 px-1">
           {selectedSupplierId && (
             <span className="flex items-center gap-1 text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full">
-              Supplier:{" "}
-              {suppliers.find((s) => s.id === selectedSupplierId)?.name ||
-                "Unknown"}
+              Supplier: {suppliers.find((s) => s.id === selectedSupplierId)?.name || 'Unknown'}
               <button
-                onClick={() => setSelectedSupplierId("")}
+                onClick={() => setSelectedSupplierId('')}
                 className="hover:text-red-500 font-bold ml-1"
               >
                 ×
@@ -283,11 +269,11 @@ export const PurchaseHistory: React.FC = () => {
           )}
           {(startDate || endDate) && (
             <span className="flex items-center gap-1 text-[10px] font-bold bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 px-2 py-1 rounded-full">
-              Date: {startDate || "Start"} to {endDate || "End"}
+              Date: {startDate || 'Start'} to {endDate || 'End'}
               <button
                 onClick={() => {
-                  setStartDate("");
-                  setEndDate("");
+                  setStartDate('');
+                  setEndDate('');
                 }}
                 className="hover:text-red-500 font-bold ml-1"
               >
@@ -325,13 +311,13 @@ export const PurchaseHistory: React.FC = () => {
                     Invoice #{inv.invoiceNumber}
                   </h3>
                   <p className="text-[10px] text-slate-400 dark:text-slate-500 font-bold mt-0.5">
-                    Supplier: {inv.supplier?.name || "Unknown"}
+                    Supplier: {inv.supplier?.name || 'Unknown'}
                   </p>
                   <p className="text-[9px] text-slate-400 font-semibold mt-1">
-                    {new Date(inv.purchaseDate).toLocaleDateString("en-IN", {
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
+                    {new Date(inv.purchaseDate).toLocaleDateString('en-IN', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric',
                     })}
                   </p>
                 </div>
@@ -340,14 +326,9 @@ export const PurchaseHistory: React.FC = () => {
               <div className="text-right flex items-center gap-4">
                 <div>
                   <p className="font-black text-xs text-slate-800 dark:text-slate-200">
-                    ₹
-                    {parseFloat(inv.totalAmount.toString()).toLocaleString(
-                      "en-IN",
-                    )}
+                    ₹{parseFloat(inv.totalAmount.toString()).toLocaleString('en-IN')}
                   </p>
-                  <p className="text-[9px] text-slate-400 mt-0.5">
-                    {inv.totalQuantity} items
-                  </p>
+                  <p className="text-[9px] text-slate-400 mt-0.5">{inv.totalQuantity} items</p>
                 </div>
                 <span className="p-1.5 bg-slate-50 dark:bg-slate-800/40 text-slate-400 dark:text-slate-500 rounded-lg">
                   <Eye size={14} />
@@ -435,11 +416,7 @@ export const PurchaseHistory: React.FC = () => {
       <Drawer
         isOpen={isDetailDrawerOpen && !!selectedInvoice}
         onClose={() => setIsDetailDrawerOpen(false)}
-        title={
-          selectedInvoice
-            ? `Invoice details: #${selectedInvoice.invoiceNumber}`
-            : ""
-        }
+        title={selectedInvoice ? `Invoice details: #${selectedInvoice.invoiceNumber}` : ''}
       >
         {selectedInvoice && (
           <div className="space-y-5">
@@ -452,19 +429,17 @@ export const PurchaseHistory: React.FC = () => {
 
               <span className="text-slate-400">GST Number:</span>
               <span className="font-bold text-right text-slate-800 dark:text-slate-200">
-                {selectedInvoice.supplier?.gstNumber || "N/A"}
+                {selectedInvoice.supplier?.gstNumber || 'N/A'}
               </span>
 
               <span className="text-slate-400">Purchase Date:</span>
               <span className="font-bold text-right text-slate-800 dark:text-slate-200">
-                {new Date(selectedInvoice.purchaseDate).toLocaleDateString(
-                  "en-IN",
-                )}
+                {new Date(selectedInvoice.purchaseDate).toLocaleDateString('en-IN')}
               </span>
 
               <span className="text-slate-400">Remarks:</span>
               <span className="font-bold text-right text-slate-800 dark:text-slate-200">
-                {selectedInvoice.remarks || "None"}
+                {selectedInvoice.remarks || 'None'}
               </span>
             </div>
 
@@ -475,42 +450,31 @@ export const PurchaseHistory: React.FC = () => {
               </h4>
               <div className="max-h-52 overflow-y-auto divide-y divide-slate-100 dark:divide-darkBorder bg-slate-50/50 dark:bg-darkBg/30 border border-slate-100 dark:border-darkBorder rounded-xl p-2">
                 {selectedInvoice.items.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex justify-between py-2 text-xs"
-                  >
+                  <div key={item.id} className="flex justify-between py-2 text-xs">
                     <div className="flex items-center gap-2">
                       <img
                         src={item.product?.imageUrl || defaultProductImg}
                         alt={item.product?.name}
                         className="w-8 h-8 object-cover bg-slate-200 dark:bg-slate-800 rounded-lg"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src =
-                            defaultProductImg;
+                          (e.target as HTMLImageElement).src = defaultProductImg;
                         }}
                       />
                       <div>
                         <p className="font-bold text-slate-700 dark:text-slate-200">
                           {item.product?.name}
                         </p>
-                        <p className="text-[9px] text-slate-400 font-mono">
-                          {item.product?.sku}
-                        </p>
+                        <p className="text-[9px] text-slate-400 font-mono">{item.product?.sku}</p>
                       </div>
                     </div>
 
                     <div className="text-right">
                       <p className="font-bold text-slate-700 dark:text-slate-300">
-                        ₹
-                        {parseFloat(item.subtotal.toString()).toLocaleString(
-                          "en-IN",
-                        )}
+                        ₹{parseFloat(item.subtotal.toString()).toLocaleString('en-IN')}
                       </p>
                       <p className="text-[9px] text-slate-400 mt-0.5">
                         {item.quantity} pcs @ ₹
-                        {parseFloat(
-                          item.purchasePrice.toString(),
-                        ).toLocaleString("en-IN")}
+                        {parseFloat(item.purchasePrice.toString()).toLocaleString('en-IN')}
                       </p>
                     </div>
                   </div>
@@ -533,10 +497,7 @@ export const PurchaseHistory: React.FC = () => {
                   Invoice Sum
                 </span>
                 <span className="font-black text-sm text-brand-500 dark:text-brand-400">
-                  ₹
-                  {parseFloat(
-                    selectedInvoice.totalAmount.toString(),
-                  ).toLocaleString("en-IN")}
+                  ₹{parseFloat(selectedInvoice.totalAmount.toString()).toLocaleString('en-IN')}
                 </span>
               </div>
             </div>
@@ -550,9 +511,7 @@ export const PurchaseHistory: React.FC = () => {
                 className="w-full flex items-center justify-center gap-2 py-3 bg-red-100 hover:bg-red-200 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-red-600 dark:text-rose-400 font-bold rounded-xl text-xs transition-colors active:scale-95"
               >
                 <Trash2 size={16} />
-                <span>
-                  {undoing ? "Rolling Back..." : "Undo Purchase (Rollback)"}
-                </span>
+                <span>{undoing ? 'Rolling Back...' : 'Undo Purchase (Rollback)'}</span>
               </button>
             )}
           </div>

@@ -1,17 +1,17 @@
-import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
-import { Home, Package, Plus, ClipboardList, Settings } from "lucide-react";
+import React from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Home, Package, Plus, ClipboardList, Settings } from 'lucide-react';
 
 export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   const navItems = [
-    { path: "/", label: "Home", icon: Home },
-    { path: "/products", label: "Products", icon: Package },
-    { path: "/purchase-entry", label: "Purchase", icon: Plus, isAction: true },
-    { path: "/history", label: "History", icon: ClipboardList },
-    { path: "/settings", label: "Settings", icon: Settings },
+    { path: '/', label: 'Home', icon: Home },
+    { path: '/products', label: 'Products', icon: Package },
+    { path: '/purchase-entry', label: 'Purchase', icon: Plus, isAction: true },
+    { path: '/history', label: 'History', icon: ClipboardList },
+    { path: '/settings', label: 'Settings', icon: Settings },
   ];
 
   return (
@@ -20,9 +20,7 @@ export const BottomNav: React.FC = () => {
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive =
-            item.path === "/"
-              ? location.pathname === "/"
-              : location.pathname.startsWith(item.path);
+            item.path === '/' ? location.pathname === '/' : location.pathname.startsWith(item.path);
 
           if (item.isAction) {
             return (
@@ -43,14 +41,14 @@ export const BottomNav: React.FC = () => {
               onClick={() => navigate(item.path)}
               className={`flex flex-col items-center justify-center flex-1 h-full py-1 text-xs font-medium transition-colors duration-150 ${
                 isActive
-                  ? "text-brand-500 dark:text-brand-400"
-                  : "text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"
+                  ? 'text-brand-500 dark:text-brand-400'
+                  : 'text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400'
               }`}
             >
               <Icon
                 size={22}
                 className={`mb-0.5 transition-transform duration-150 ${
-                  isActive ? "scale-110 stroke-[2.2]" : "stroke-[1.8]"
+                  isActive ? 'scale-110 stroke-[2.2]' : 'stroke-[1.8]'
                 }`}
               />
               <span className="text-[10px] tracking-wide">{item.label}</span>
