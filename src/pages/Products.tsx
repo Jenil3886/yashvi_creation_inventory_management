@@ -11,6 +11,7 @@ import {
   PackageCheck,
   Image as ImageIcon,
   Sliders,
+  MoreVertical,
 } from 'lucide-react';
 import useOfflineStore from '../store/useOfflineStore';
 import apiClient from '../services/apiClient';
@@ -75,6 +76,20 @@ export const Products: React.FC = () => {
   const [adjustRemarks, setAdjustRemarks] = useState('');
   const [adjustError, setAdjustError] = useState<string | null>(null);
   const [adjusting, setAdjusting] = useState(false);
+
+  // Dropdown actions menu state
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      setActiveMenuId(null);
+    };
+    document.addEventListener('click', handleGlobalClick);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
+  }, []);
 
   const handleOpenAdjust = (p: Product) => {
     setAdjustingProduct(p);
@@ -463,28 +478,57 @@ export const Products: React.FC = () => {
 
                   {/* Actions */}
                   {isOnline && (
-                    <div className="flex items-center gap-1">
+                    <div className="relative">
                       <button
-                        onClick={() => handleOpenAdjust(p)}
-                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-emerald-500 dark:hover:text-emerald-400 bg-slate-50 dark:bg-slate-800/40 hover:bg-emerald-50 rounded-xl transition-all"
-                        title="Adjust Stock"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(activeMenuId === p.id ? null : p.id);
+                        }}
+                        className="p-2.5 text-slate-400 dark:text-slate-500 hover:text-brand-500 dark:hover:text-brand-400 hover:bg-slate-50 dark:hover:bg-slate-800/40 rounded-xl transition-all active:scale-95"
+                        title="More Actions"
                       >
-                        <Sliders size={14} />
+                        <MoreVertical size={16} />
                       </button>
-                      <button
-                        onClick={() => handleOpenEdit(p)}
-                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-brand-500 dark:hover:text-brand-400 bg-slate-50 dark:bg-slate-800/40 hover:bg-brand-50 rounded-xl transition-all"
-                        title="Edit Product"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteProduct(p.id)}
-                        className="p-2 text-slate-400 dark:text-slate-500 hover:text-rose-500 dark:hover:text-rose-400 bg-slate-50 dark:bg-slate-800/40 hover:bg-rose-50 rounded-xl transition-all"
-                        title="Delete Product"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+
+                      {/* Dropdown Menu */}
+                      {activeMenuId === p.id && (
+                        <div className="absolute right-0 mt-1 w-36 bg-white dark:bg-darkCard border border-slate-100 dark:border-darkBorder rounded-2xl shadow-xl z-20 py-1.5 animate-slide-up origin-top-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(null);
+                              handleOpenAdjust(p);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          >
+                            <Sliders size={13} className="text-emerald-500" />
+                            <span>Adjust Stock</span>
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(null);
+                              handleOpenEdit(p);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                          >
+                            <Edit2 size={13} className="text-brand-500" />
+                            <span>Edit Details</span>
+                          </button>
+                          <div className="h-px bg-slate-100 dark:bg-darkBorder my-1" />
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuId(null);
+                              handleDeleteProduct(p.id);
+                            }}
+                            className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left text-xs font-bold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors"
+                          >
+                            <Trash2 size={13} />
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

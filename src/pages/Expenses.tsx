@@ -72,8 +72,13 @@ export const Expenses: React.FC = () => {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm<ExpenseFormInput>();
+
+  const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+  const selectedCategory = watch('category');
 
   // Fetch / load cached data
   const loadData = async () => {
@@ -112,6 +117,14 @@ export const Expenses: React.FC = () => {
   useEffect(() => {
     loadExpensesQueue();
     loadData();
+
+    const handleGlobalClick = () => {
+      setIsCategoryDropdownOpen(false);
+    };
+    document.addEventListener('click', handleGlobalClick);
+    return () => {
+      document.removeEventListener('click', handleGlobalClick);
+    };
   }, []);
 
   // Sync when coming online
@@ -408,21 +421,75 @@ export const Expenses: React.FC = () => {
               </div>
 
               {/* Category dropdown */}
-              <div className="space-y-1">
+              <div className="space-y-1 relative">
                 <label className="text-xs font-semibold text-gray-400">Category *</label>
-                <select
-                  className="w-full bg-[#0c1424] border border-brand-900/30 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-emerald-500"
+
+                {/* Hidden input to bind value with react-hook-form */}
+                <input
+                  type="hidden"
                   {...register('category', { required: 'Category is required' })}
+                />
+
+                {/* Custom trigger button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsCategoryDropdownOpen(!isCategoryDropdownOpen);
+                  }}
+                  className="w-full bg-[#0c1424] border border-brand-900/30 rounded-xl px-4 py-3 text-sm text-left flex items-center justify-between focus:outline-none focus:border-emerald-500 text-gray-200"
                 >
-                  <option value="">Select Category</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
+                  <span className="font-semibold">
+                    {selectedCategory
+                      ? CATEGORIES.find((c) => c.id === selectedCategory)?.name
+                      : 'Select Category'}
+                  </span>
+                  <svg
+                    className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${isCategoryDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+
+                {/* Custom Options overlay */}
+                {isCategoryDropdownOpen && (
+                  <div className="absolute left-0 right-0 mt-1 bg-[#0a101b] border border-brand-900/40 rounded-xl shadow-2xl z-50 py-1.5 max-h-48 overflow-y-auto animate-slide-up">
+                    {CATEGORIES.map((c) => {
+                      const Icon = c.icon;
+                      return (
+                        <button
+                          key={c.id}
+                          type="button"
+                          onClick={() => {
+                            setValue('category', c.id, { shouldValidate: true });
+                            setIsCategoryDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-3 px-4 py-2.5 text-left text-xs font-bold hover:bg-brand-900/20 transition-colors ${
+                            selectedCategory === c.id
+                              ? 'bg-brand-900/40 text-emerald-400'
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          <div className={`p-1 rounded-md border ${c.color}`}>
+                            <Icon className="w-3.5 h-3.5" />
+                          </div>
+                          <span>{c.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+
                 {errors.category && (
-                  <p className="text-xs text-red-400">{errors.category.message}</p>
+                  <p className="text-xs text-red-400 mt-1">{errors.category.message}</p>
                 )}
               </div>
 
